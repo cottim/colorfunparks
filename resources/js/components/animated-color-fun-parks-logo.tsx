@@ -6,10 +6,9 @@ type AnimatedLogoProps = ComponentProps<typeof motion.svg> & {
 };
 
 const loop = {
-    duration: 3.6,
+    duration: 2,
     ease: 'easeInOut' as const,
     repeat: 0,
-    repeatDelay: 0.8,
     times: [0, 0.18, 0.7, 0.88, 1],
 };
 

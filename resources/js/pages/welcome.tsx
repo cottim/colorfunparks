@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { CalendarDaysIcon, Image } from 'lucide-react';
+import { CalendarDaysIcon } from 'lucide-react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Carousel,
     CarouselContent,
@@ -11,7 +10,6 @@ import {
 } from '@/components/ui/carousel';
 import { CtaButton } from '@/components/ui/cta-button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import storage from '@/routes/storage';
 
 export default function Welcome() {
     return (
@@ -40,9 +38,7 @@ export default function Welcome() {
                                     className="overflow-hidden rounded-xl bg-transparent"
                                 >
                                     <img
-                                        src={storage.local.url(
-                                            '/img/color_camp_1.jpg',
-                                        )}
+                                        src={'/img/color_camp_1.jpg'}
                                         alt="Summer Camp banner"
                                     />
                                 </AspectRatio>
@@ -53,9 +49,7 @@ export default function Welcome() {
                                     className="overflow-hidden rounded-xl bg-transparent"
                                 >
                                     <img
-                                        src={storage.local.url(
-                                            '/img/color_camp_2.jpg',
-                                        )}
+                                        src={'/img/color_camp_2.jpg'}
                                         alt="Summer Camp banner"
                                     />
                                 </AspectRatio>
@@ -66,9 +60,7 @@ export default function Welcome() {
                                     className="overflow-hidden rounded-xl bg-transparent"
                                 >
                                     <img
-                                        src={storage.local.url(
-                                            '/img/dia-da-crianca.jpg',
-                                        )}
+                                        src={'/img/dia-da-crianca.jpg'}
                                         alt="Summer Camp banner"
                                     />
                                 </AspectRatio>
