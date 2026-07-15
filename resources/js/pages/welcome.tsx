@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { CalendarDaysIcon } from 'lucide-react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import {
     Carousel,
     CarouselContent,
@@ -8,8 +8,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel';
-import { CtaButton } from '@/components/ui/cta-button';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { BookParty } from '@/pages/partials/book-party';
 
 export default function Welcome() {
