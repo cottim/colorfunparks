@@ -1,8 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { CalendarDaysIcon, FerrisWheelIcon } from 'lucide-react';
-import ColorParyIcon from '@/components/ui/color-party';
 import { CtaButton } from '@/components/ui/cta-button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldContent, FieldLabel } from '@/components/ui/field';
 import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -14,8 +13,6 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import YupiColorIcon from '@/components/ui/yupi-color';
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field';
 
 export function BookParty() {
 
