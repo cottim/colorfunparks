@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { CalendarDaysIcon } from 'lucide-react';
+import { CalendarDaysIcon, FerrisWheelIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { CtaButton } from '@/components/ui/cta-button';
@@ -12,6 +12,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 type Step = 'park' | 'details' | 'review';
 
@@ -126,7 +127,8 @@ export function BookParty() {
                                 {step === 'park' && (
                                     <>
                                         <h2 ref={headingRef} tabIndex={-1}>
-                                            Choose your park
+                                            <FerrisWheelIcon />
+                                            Escolhe o teu parque
                                         </h2>
 
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -150,14 +152,14 @@ export function BookParty() {
                                     <>
                                         <div>
                                             <h2 ref={headingRef} tabIndex={-1}>
-                                                Party details
+                                                Detalhes da festa
                                             </h2>
 
-                                            <p>Selected park: {data.park}</p>
+                                            <p>Parque seleccionado: {data.park}</p>
                                         </div>
 
                                         <label className="flex flex-col gap-2">
-                                            Child’s name
+                                            Nome da criança
                                             <input
                                                 value={data.childName}
                                                 onChange={(event) =>
@@ -171,7 +173,7 @@ export function BookParty() {
                                         </label>
 
                                         <label className="flex flex-col gap-2">
-                                            Contact email
+                                            Email
                                             <input
                                                 type="email"
                                                 value={data.email}
@@ -186,7 +188,7 @@ export function BookParty() {
                                         </label>
 
                                         <label className="flex flex-col gap-2">
-                                            Number of guests
+                                            Número de convidados
                                             <input
                                                 type="number"
                                                 min="1"
@@ -202,14 +204,18 @@ export function BookParty() {
                                         </label>
 
                                         <div className="flex gap-3">
-                                            <button
+                                            <Button
+                                                variant="secondary"
                                                 type="button"
-                                                onClick={() => setStep('park')}
+                                                onClick={() => {
+                                                    setStep('park')
+                                                }}
                                             >
-                                                Back
-                                            </button>
+                                                Voltar
+                                            </Button>
 
-                                            <button
+                                            <Button
+                                                variant="default"
                                                 type="button"
                                                 disabled={
                                                     !data.childName ||
@@ -218,8 +224,8 @@ export function BookParty() {
                                                 }
                                                 onClick={continueToReview}
                                             >
-                                                Continue
-                                            </button>
+                                                Próximo passo
+                                            </Button>
                                         </div>
                                     </>
                                 )}
@@ -227,39 +233,40 @@ export function BookParty() {
                                 {step === 'review' && (
                                     <>
                                         <h2 ref={headingRef} tabIndex={-1}>
-                                            Check your booking
+                                            Verifique os detalhes
                                         </h2>
 
                                         <dl className="grid grid-cols-2 gap-3">
-                                            <dt>Park</dt>
+                                            <dt>Parque</dt>
                                             <dd>{data.park}</dd>
 
-                                            <dt>Child</dt>
+                                            <dt>Criança</dt>
                                             <dd>{data.childName}</dd>
 
                                             <dt>Email</dt>
                                             <dd>{data.email}</dd>
 
-                                            <dt>Guests</dt>
+                                            <dt>Convidados</dt>
                                             <dd>{data.guests}</dd>
                                         </dl>
 
                                         <div className="flex gap-3">
-                                            <button
+                                            <Button
+                                                variant="secondary"
                                                 type="button"
                                                 onClick={() =>
                                                     setStep('details')
                                                 }
                                             >
                                                 Back
-                                            </button>
+                                            </Button>
 
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={submit}
                                             >
-                                                Confirm booking
-                                            </button>
+                                                Confirmar
+                                            </Button>
                                         </div>
                                     </>
                                 )}
