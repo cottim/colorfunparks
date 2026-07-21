@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
+import { BookParty } from '@/components/book-party/book-party';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import {
     Carousel,
@@ -8,7 +9,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel';
-import { BookParty } from '@/pages/partials/book-party';
 
 export default function Welcome() {
     return (
