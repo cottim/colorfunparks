@@ -11,6 +11,7 @@ export type Park = {
 
 export type BookingData = {
     park: Park | null;
+    partyDate: string;
     children: PartyChild[];
     email: string;
     guests: string;

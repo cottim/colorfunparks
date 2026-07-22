@@ -1,24 +1,19 @@
 import { FerrisWheelIcon } from 'lucide-react';
-import type { RefObject } from 'react';
+import { StepHeading } from '@/components/book-party/step-heading';
 import type { Park } from '@/components/book-party/types';
 
 type ParkStepProps = {
     parks: readonly Park[];
-    headingRef: RefObject<HTMLHeadingElement | null>;
     onSelect: (park: Park) => void;
 };
 
-export function ParkStep({ parks, headingRef, onSelect }: ParkStepProps) {
+export function ParkStep({ parks, onSelect }: ParkStepProps) {
     return (
         <>
-            <h2
-                className="flex items-center gap-2"
-                ref={headingRef}
-                tabIndex={-1}
-            >
+            <StepHeading className="flex items-center gap-2">
                 <FerrisWheelIcon />
                 Escolhe o teu parque
-            </h2>
+            </StepHeading>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {parks.map((park) => (

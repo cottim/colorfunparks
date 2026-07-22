@@ -1,15 +1,16 @@
 import { Form } from '@inertiajs/react';
 import { CalendarDaysIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useReducer, useState } from 'react';
+import {
+    bookingReducer,
+    createInitialBookingData,
+} from '@/components/book-party/booking-reducer';
+import { validateBookingDetails } from '@/components/book-party/booking-validation';
 import { DetailsStep } from '@/components/book-party/details-step';
 import { ParkStep } from '@/components/book-party/park-step';
 import { ReviewStep } from '@/components/book-party/review-step';
-import type {
-    BookingData,
-    Park,
-    PartyChildField,
-} from '@/components/book-party/types';
+import type { Park } from '@/components/book-party/types';
 import { CtaButton } from '@/components/ui/cta-button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -23,77 +24,43 @@ import {
 
 type Step = 'park' | 'details' | 'review';
 
+type BookPartyProps = {
+    maxBookingMonthsAhead?: number;
+};
+
 const parks = [
     { value: 'color-party', label: 'Color Party' },
     { value: 'yupi-color', label: 'Yupi Color' },
     { value: 'kiddy-color', label: 'Kiddy Color' },
 ];
 
-export function BookParty() {
+export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
     const [step, setStep] = useState<Step>('park');
 
-    const [data, setData] = useState<BookingData>(() => ({
-        park: null,
-        children: [
-            {
-                id: crypto.randomUUID(),
-                name: '',
-                birthDate: '',
-            },
-        ],
-        email: '',
-        guests: '',
-    }));
+    const [data, dispatch] = useReducer(
+        bookingReducer,
+        undefined,
+        createInitialBookingData,
+    );
 
-    const headingRef = useRef<HTMLHeadingElement>(null);
     const shouldReduceMotion = useReducedMotion();
 
-    const hasIncompleteChildren =
-        data.children.length === 0 ||
-        data.children.some(
-            (child) => child.name.trim() === '' || child.birthDate === '',
-        );
-
-    const canContinueToReview =
-        !hasIncompleteChildren &&
-        data.email.trim() !== '' &&
-        data.guests.trim() !== '';
-
-    useEffect(() => {
-        headingRef.current?.focus();
-    }, [step]);
-
-    function updateData<Key extends keyof BookingData>(
-        key: Key,
-        value: BookingData[Key],
-    ) {
-        setData((currentData) => ({
-            ...currentData,
-            [key]: value,
-        }));
-    }
-
-    function updateChild(childId: string, key: PartyChildField, value: string) {
-        setData((currentData) => ({
-            ...currentData,
-            children: currentData.children.map((child) =>
-                child.id === childId
-                    ? {
-                          ...child,
-                          [key]: value,
-                      }
-                    : child,
-            ),
-        }));
-    }
+    const validation = validateBookingDetails(data, maxBookingMonthsAhead);
+    const [hasAttemptedContinue, setHasAttemptedContinue] = useState(false);
 
     function selectPark(park: Park) {
-        updateData('park', park);
+        dispatch({
+            type: 'park.selected',
+            park,
+        });
+
         setStep('details');
     }
 
     function continueToReview() {
-        if (!canContinueToReview) {
+        setHasAttemptedContinue(true);
+
+        if (!validation.isValid) {
             return;
         }
 
@@ -102,35 +69,6 @@ export function BookParty() {
 
     function submit() {
         console.log('Submitting:', data);
-    }
-
-    function addChild() {
-        setData((currentData) => ({
-            ...currentData,
-            children: [
-                ...currentData.children,
-                {
-                    id: crypto.randomUUID(),
-                    name: '',
-                    birthDate: '',
-                },
-            ],
-        }));
-    }
-
-    function removeChild(childId: string) {
-        setData((currentData) => {
-            if (currentData.children.length === 1) {
-                return currentData;
-            }
-
-            return {
-                ...currentData,
-                children: currentData.children.filter(
-                    (child) => child.id !== childId,
-                ),
-            };
-        });
     }
 
     const animation = shouldReduceMotion
@@ -187,7 +125,6 @@ export function BookParty() {
                                 {step === 'park' && (
                                     <ParkStep
                                         parks={parks}
-                                        headingRef={headingRef}
                                         onSelect={selectPark}
                                     />
                                 )}
@@ -195,17 +132,14 @@ export function BookParty() {
                                 {step === 'details' && (
                                     <DetailsStep
                                         data={data}
-                                        headingRef={headingRef}
-                                        canContinue={canContinueToReview}
-                                        onChildChange={updateChild}
-                                        onAddChild={addChild}
-                                        onRemoveChild={removeChild}
-                                        onEmailChange={(email) =>
-                                            updateData('email', email)
+                                        maxBookingMonthsAhead={
+                                            maxBookingMonthsAhead
                                         }
-                                        onGuestsChange={(guests) =>
-                                            updateData('guests', guests)
+                                        errors={validation.errors}
+                                        showValidationErrors={
+                                            hasAttemptedContinue
                                         }
+                                        dispatch={dispatch}
                                         onBack={() => setStep('park')}
                                         onContinue={continueToReview}
                                     />
@@ -214,7 +148,6 @@ export function BookParty() {
                                 {step === 'review' && (
                                     <ReviewStep
                                         data={data}
-                                        headingRef={headingRef}
                                         onBack={() => setStep('details')}
                                         onConfirm={submit}
                                     ></ReviewStep>

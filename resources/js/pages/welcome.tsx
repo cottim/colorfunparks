@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
 import { BookParty } from '@/components/book-party/book-party';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import {
     Carousel,
     CarouselContent,
@@ -11,6 +10,12 @@ import {
 } from '@/components/ui/carousel';
 
 export default function Welcome() {
+    const banners = [
+        '/img/color_camp_1.jpg',
+        '/img/color_camp_2.jpg',
+        '/img/dia-da-crianca.jpg',
+    ];
+
     return (
         <>
             <Head />
@@ -28,75 +33,20 @@ export default function Welcome() {
                 <div className="mx-auto flex w-full max-w-4xl justify-center p-2 lg:px-8">
                     <Carousel className="mb-8 w-full rounded-xl">
                         <CarouselContent>
-                            <CarouselItem className="hidden md:flex">
-                                <AspectRatio
-                                    ratio={16 / 9}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/color_camp_1.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
-                            <CarouselItem className="hidden md:flex">
-                                <AspectRatio
-                                    ratio={16 / 9}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/color_camp_2.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
-                            <CarouselItem className="hidden md:flex">
-                                <AspectRatio
-                                    ratio={16 / 9}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/dia-da-crianca.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
-                            <CarouselItem className="flex md:hidden">
-                                <AspectRatio
-                                    ratio={4 / 5}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/color_camp_1.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
-                            <CarouselItem className="flex md:hidden">
-                                <AspectRatio
-                                    ratio={4 / 5}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/color_camp_2.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
-                            <CarouselItem className="flex md:hidden">
-                                <AspectRatio
-                                    ratio={4 / 5}
-                                    className="overflow-hidden rounded-xl bg-transparent"
-                                >
-                                    <img
-                                        src={'/img/dia-da-crianca.jpg'}
-                                        alt="Summer Camp banner"
-                                    />
-                                </AspectRatio>
-                            </CarouselItem>
+                            {banners.map((src) => (
+                                <CarouselItem key={src}>
+                                    <div className="aspect-4/5 overflow-hidden rounded-xl md:aspect-video">
+                                        <img
+                                            src={src}
+                                            alt="Summer Camp banner"
+                                            className="size-full object-cover"
+                                        />
+                                    </div>
+                                </CarouselItem>
+                            ))}
                         </CarouselContent>
-                        <CarouselPrevious className="hidden border-[#558b6e] bg-transparent text-[#558b6e] shadow-2xl hover:bg-[#558b6e] hover:text-gray-100 lg:flex" />
-                        <CarouselNext className="hidden border-[#558b6e] bg-transparent text-[#558b6e] shadow-2xl hover:bg-[#558b6e] hover:text-gray-100 lg:flex" />
+                        <CarouselPrevious className="hidden border-[#558b6e] bg-transparent text-[#558b6e] shadow-2xl hover:bg-[#558b6e] hover:text-gray-100 lg:flex dark:border-[#558b6e] dark:bg-transparent dark:hover:bg-[#558b6e] dark:hover:text-gray-100" />
+                        <CarouselNext className="hidden border-[#558b6e] bg-transparent text-[#558b6e] shadow-2xl hover:bg-[#558b6e] hover:text-gray-100 lg:flex dark:border-[#558b6e] dark:bg-transparent dark:hover:bg-[#558b6e] dark:hover:text-gray-100" />
                     </Carousel>
                 </div>
             </div>

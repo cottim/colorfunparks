@@ -1,3 +1,4 @@
+import { createPartyChild } from '@/components/book-party/party-child';
 import type {
     BookingData,
     Park,
@@ -31,10 +32,24 @@ export type BookingAction =
     | {
           type: 'guests.changed';
           value: string;
+      }
+    | {
+          type: 'partyDate.changed';
+          value: string;
       };
 
 function assertNever(action: never): never {
     throw new Error(`Unhandled booking action: ${JSON.stringify(action)}`);
+}
+
+export function createInitialBookingData(): BookingData {
+    return {
+        park: null,
+        children: [createPartyChild()],
+        email: '',
+        guests: '',
+        partyDate: '',
+    };
 }
 
 export function bookingReducer(
@@ -84,6 +99,11 @@ export function bookingReducer(
             return {
                 ...state,
                 guests: action.value,
+            };
+        case 'partyDate.changed':
+            return {
+                ...state,
+                partyDate: action.value,
             };
 
         default:

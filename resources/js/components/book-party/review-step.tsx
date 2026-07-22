@@ -1,25 +1,17 @@
-import type { RefObject } from 'react';
+import { StepHeading } from '@/components/book-party/step-heading';
 import type { BookingData } from '@/components/book-party/types';
 import { Button } from '@/components/ui/button';
 
 type ReviewStepProps = {
     data: BookingData;
-    headingRef: RefObject<HTMLHeadingElement | null>;
     onBack: () => void;
     onConfirm: () => void;
 };
 
-export function ReviewStep({
-    data,
-    headingRef,
-    onBack,
-    onConfirm,
-}: ReviewStepProps) {
+export function ReviewStep({ data, onBack, onConfirm }: ReviewStepProps) {
     return (
         <>
-            <h2 ref={headingRef} tabIndex={-1}>
-                Verifique os detalhes
-            </h2>
+            <StepHeading>Verifique os detalhes</StepHeading>
 
             <dl className="grid grid-cols-2 gap-3">
                 <dt>Parque</dt>
