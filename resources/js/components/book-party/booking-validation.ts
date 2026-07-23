@@ -77,7 +77,7 @@ export function validateBookingDetails(
     } else if (
         addMonths(new Date(), maxBookingMonthsAhead) >= new Date(data.partyDate)
     ) {
-        errors.partyDate = `O dia da festa não pode ser superior a ${maxBookingMonthsAhead} meses.`;
+        errors.partyDate = `O dia da festa não pode ser marcada com mais de ${maxBookingMonthsAhead} meses de antecedência.`;
     }
 
     return {
