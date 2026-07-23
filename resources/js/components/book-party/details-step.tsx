@@ -1,8 +1,9 @@
-import { addDays, addMonths, format, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ChevronDownIcon } from 'lucide-react';
 import type { Dispatch } from 'react';
 import { useState } from 'react';
 import { pt } from 'react-day-picker/locale';
+import type { BookingDateRange } from '@/components/book-party/booking-date-range';
 import type { BookingAction } from '@/components/book-party/booking-reducer';
 import type { BookingDetailsErrors } from '@/components/book-party/booking-validation';
 import { createPartyChild } from '@/components/book-party/party-child';
@@ -26,7 +27,7 @@ import {
 
 type DetailsStepProps = {
     data: BookingData;
-    maxBookingMonthsAhead: number;
+    partyDateRange: BookingDateRange;
     errors: BookingDetailsErrors;
     showValidationErrors: boolean;
     dispatch: Dispatch<BookingAction>;
@@ -36,7 +37,7 @@ type DetailsStepProps = {
 
 export function DetailsStep({
     data,
-    maxBookingMonthsAhead,
+    partyDateRange,
     errors,
     showValidationErrors,
     dispatch,
@@ -51,7 +52,6 @@ export function DetailsStep({
 
     const [isPartyDateOpen, setIsPartyDateOpen] = useState(false);
 
-    const fallbackPartyDate = addDays(new Date(), 6);
     const partyDate = data.partyDate ? parseISO(data.partyDate) : undefined;
 
     const emailError =
@@ -67,6 +67,9 @@ export function DetailsStep({
             ? errors.partyDate
             : undefined;
 
+    const partyDateInputId = 'booking-party-date';
+    const partyDateErrorId = `${partyDateInputId}-error`;
+
     return (
         <>
             <div>
@@ -79,6 +82,7 @@ export function DetailsStep({
                 <PartyChildFields
                     key={child.id}
                     child={child}
+                    errors={errors.children?.byId[child.id]}
                     showValidationErrors={showValidationErrors}
                     canRemove={data.children.length > 1}
                     onChange={(childId, key: PartyChildField, value) =>
@@ -141,7 +145,7 @@ export function DetailsStep({
                 <InputError id="booking-email-error" message={emailError} />
             </Field>
             <Field>
-                <Label htmlFor="booking-party-date">Data de nascimento</Label>
+                <Label htmlFor={partyDateInputId}>Data da Festa</Label>
                 <Popover
                     open={isPartyDateOpen}
                     onOpenChange={(isOpen) => {
@@ -158,18 +162,18 @@ export function DetailsStep({
                     <PopoverTrigger asChild>
                         <Button
                             type="button"
-                            id="booking-party-date"
-                            name="booking-party-date"
+                            id={partyDateInputId}
+                            name={partyDateInputId}
                             variant="outline"
-                            data-empty={addDays(new Date(), 7)}
+                            data-empty={!partyDate}
                             aria-invalid={Boolean(partyDateError)}
                             aria-describedby={
-                                partyDateError ? partyDateError : undefined
+                                partyDateError ? partyDateErrorId : undefined
                             }
                             className="justify-between bg-transparent text-left font-normal hover:bg-white/40 data-[empty=true]:text-muted-foreground dark:bg-transparent dark:hover:bg-white/40"
                         >
-                            {data.partyDate ? (
-                                format(data.partyDate, 'yyyy-MM-dd')
+                            {partyDate ? (
+                                format(partyDate, 'dd/MM/yyyy')
                             ) : (
                                 <span>Data da Festa</span>
                             )}
@@ -181,12 +185,11 @@ export function DetailsStep({
                             locale={pt}
                             mode="single"
                             selected={partyDate}
-                            defaultMonth={partyDate ?? fallbackPartyDate}
-                            startMonth={new Date()}
-                            endMonth={addMonths(
-                                new Date(),
-                                maxBookingMonthsAhead,
-                            )}
+                            defaultMonth={
+                                partyDate ?? partyDateRange.earliestDate
+                            }
+                            startMonth={partyDateRange.earliestDate}
+                            endMonth={partyDateRange.latestDate}
                             captionLayout="label"
                             reverseYears
                             onSelect={(date) => {
@@ -201,18 +204,19 @@ export function DetailsStep({
 
                                 setTouchedFields((current) => ({
                                     ...current,
-                                    birthDate: true,
+                                    partyDate: true,
                                 }));
 
                                 setIsPartyDateOpen(false);
                             }}
+                            disabled={[
+                                { before: partyDateRange.earliestDate },
+                                { after: partyDateRange.latestDate },
+                            ]}
                         />
                     </PopoverContent>
                 </Popover>
-                <InputError
-                    id="booking-party-date-error"
-                    message={partyDateError}
-                />
+                <InputError id={partyDateErrorId} message={partyDateError} />
             </Field>
             <Field>
                 <Label htmlFor="booking-guests">Número de convidados</Label>

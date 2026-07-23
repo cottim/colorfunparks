@@ -74,7 +74,7 @@ export function PartyChildFields({
             <FieldGroup
                 className={`grid grid-cols-[1fr_1fr_30px] justify-center gap-2`}
             >
-                <Field className="flex-1">
+                <Field className="items-start">
                     <Label htmlFor={nameInputId}>Nome da criança</Label>
 
                     <Input
@@ -92,7 +92,7 @@ export function PartyChildFields({
                                 name: true,
                             }))
                         }
-                        className="flex-1"
+                        className=""
                     />
 
                     <InputError id={nameErrorId} message={nameError} />
@@ -184,7 +184,7 @@ export function PartyChildFields({
                         type="button"
                         variant="destructive"
                         size="sm"
-                        className="col-auto self-end"
+                        className="col-auto self-center"
                         onClick={() => onRemove(child.id)}
                     >
                         <X />

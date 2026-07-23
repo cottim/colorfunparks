@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
+import { CalendarDaysIcon } from 'lucide-react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
-import { BookParty } from '@/components/book-party/book-party';
+import { PublicFooter } from '@/components/public-footer';
 import {
     Carousel,
     CarouselContent,
@@ -8,14 +9,27 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel';
+import { CtaButton } from '@/components/ui/cta-button';
+import { home } from '@/routes';
+import { create as createPartyBooking } from '@/routes/party-bookings';
 
+/*type banner = {
+    img: string;
+    alt: string;
+    type: string; // mobile | tablet | desktop
+    hasCta: boolean;
+    ctaLabel: string;
+    ctaLink: string;
+}
+
+type banners = banner[];*/
+
+const banners = [
+    '/img/color_camp_1.jpg',
+    '/img/color_camp_2.jpg',
+    '/img/dia-da-crianca.jpg',
+];
 export default function Welcome() {
-    const banners = [
-        '/img/color_camp_1.jpg',
-        '/img/color_camp_2.jpg',
-        '/img/dia-da-crianca.jpg',
-    ];
-
     return (
         <>
             <Head />
@@ -23,10 +37,15 @@ export default function Welcome() {
                 <div className="flex justify-center p-2 lg:p-4">
                     <header className="w-full max-w-4xl text-sm not-has-[nav]:hidden">
                         <nav className="flex items-center justify-between gap-4">
-                            <Link href="/">
+                            <Link href={home()}>
                                 <AnimatedColorFunParksLogo className="w-full max-w-3xs overflow-visible" />
                             </Link>
-                            <BookParty></BookParty>
+                            <CtaButton asChild attention="shine">
+                                <Link href={createPartyBooking()}>
+                                    <CalendarDaysIcon />
+                                    Agendar Festa
+                                </Link>
+                            </CtaButton>
                         </nav>
                     </header>
                 </div>
@@ -49,6 +68,7 @@ export default function Welcome() {
                         <CarouselNext className="hidden border-[#558b6e] bg-transparent text-[#558b6e] shadow-2xl hover:bg-[#558b6e] hover:text-gray-100 lg:flex dark:border-[#558b6e] dark:bg-transparent dark:hover:bg-[#558b6e] dark:hover:text-gray-100" />
                     </Carousel>
                 </div>
+                <PublicFooter className="mt-auto" />
             </div>
         </>
     );

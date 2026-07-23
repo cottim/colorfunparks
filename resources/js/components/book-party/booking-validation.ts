@@ -1,4 +1,5 @@
-import { addMonths } from 'date-fns';
+import { isAfter, isBefore, isValid, parseISO } from 'date-fns';
+import type { BookingDateRange } from '@/components/book-party/booking-date-range';
 import type { BookingData } from '@/components/book-party/types';
 
 export type BookingDetailsValidation = {
@@ -25,7 +26,7 @@ export type BookingDetailsErrors = {
 
 export function validateBookingDetails(
     data: BookingData,
-    maxBookingMonthsAhead: number,
+    partyDateRange: BookingDateRange,
 ): BookingDetailsValidation {
     const errors: BookingDetailsErrors = {};
 
@@ -72,12 +73,17 @@ export function validateBookingDetails(
 
     if (data.partyDate.trim() === '') {
         errors.partyDate = 'Indica a data pretendida da festa.';
-    } else if (new Date() >= new Date(data.partyDate)) {
-        errors.partyDate = 'O dia da festa tem que ser depois do dia de hoje.';
-    } else if (
-        addMonths(new Date(), maxBookingMonthsAhead) >= new Date(data.partyDate)
-    ) {
-        errors.partyDate = `O dia da festa não pode ser marcada com mais de ${maxBookingMonthsAhead} meses de antecedência.`;
+    } else {
+        const partyDate = parseISO(data.partyDate);
+
+        if (!isValid(partyDate)) {
+            errors.partyDate = 'Indica uma data válida.';
+        } else if (isBefore(partyDate, partyDateRange.earliestDate)) {
+            errors.partyDate = 'O dia da festa não pode estar no passado.';
+        } else if (isAfter(partyDate, partyDateRange.latestDate)) {
+            errors.partyDate =
+                'O dia da festa ultrapassa o período disponível para reservas.';
+        }
     }
 
     return {

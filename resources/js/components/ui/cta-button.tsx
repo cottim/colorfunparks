@@ -1,8 +1,9 @@
+import { Slot } from 'radix-ui';
 import type { ComponentProps } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type CtaButtonProps = Omit<ComponentProps<typeof Button>, 'asChild' | 'variant'> & {
+type CtaButtonProps = Omit<ComponentProps<typeof Button>, 'variant'> & {
     attention?: 'none' | 'shine';
 };
 
@@ -11,12 +12,14 @@ export function CtaButton({
     children,
     className,
     disabled,
+    asChild = false,
     ...props
 }: CtaButtonProps) {
     return (
         <Button
             data-slot="cta-button"
             disabled={disabled}
+            asChild={asChild}
             className={cn(
                 'group relative cursor-pointer overflow-hidden bg-red-500 font-semibold text-gray-100 shadow-md',
                 'hover:bg-red-500/90 hover:shadow-lg',
@@ -40,9 +43,19 @@ export function CtaButton({
                     )}
                 />
             )}
-            <span className="relative z-10 inline-flex items-center gap-2">
-                {children}
-            </span>
+            {asChild ? (
+                <Slot.Slottable child={children}>
+                    {(slottable) => (
+                        <span className="relative z-10 inline-flex items-center gap-2">
+                            {slottable}
+                        </span>
+                    )}
+                </Slot.Slottable>
+            ) : (
+                <span className="relative z-10 inline-flex items-center gap-2">
+                    {children}
+                </span>
+            )}
         </Button>
     );
 }

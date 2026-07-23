@@ -1,3 +1,4 @@
+import { format, parseISO } from 'date-fns';
 import { StepHeading } from '@/components/book-party/step-heading';
 import type { BookingData } from '@/components/book-party/types';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,11 @@ export function ReviewStep({ data, onBack, onConfirm }: ReviewStepProps) {
                     <ul className="flex flex-col gap-2">
                         {data.children.map((child) => (
                             <li key={child.id}>
-                                {child.name}, {child.birthDate}
+                                {child.name},{' '}
+                                {format(
+                                    parseISO(child.birthDate),
+                                    'dd/MM/yyyy',
+                                )}
                             </li>
                         ))}
                     </ul>
@@ -30,6 +35,9 @@ export function ReviewStep({ data, onBack, onConfirm }: ReviewStepProps) {
 
                 <dt>Email</dt>
                 <dd>{data.email}</dd>
+
+                <dt>Data da Festa</dt>
+                <dd>{format(parseISO(data.partyDate), 'dd/MM/yyyy')}</dd>
 
                 <dt>Convidados</dt>
                 <dd>{data.guests}</dd>
