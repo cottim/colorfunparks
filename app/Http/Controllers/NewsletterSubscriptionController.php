@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Newsletter\SubscribeToNewsletter;
 use App\Http\Requests\StoreNewsletterSubscriptionRequest;
-use App\Models\NewsletterSubscription;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class NewsletterSubscriptionController extends Controller
 {
     public function __invoke(
         StoreNewsletterSubscriptionRequest $request,
-    ): RedirectResponse {
-        NewsletterSubscription::query()->create([
-            'email' => $request->validated('email'),
-            'consented_at' => now(),
-        ]);
+        SubscribeToNewsletter $subscribeToNewsletter,
+    ): JsonResponse {
+        $subscribeToNewsletter->handle($request->validated('email'));
 
-        return back();
+        return response()->json([
+            'message' => 'Se este email ainda não recebia as nossas novidades, a inscrição foi registada.',
+        ]);
     }
 }

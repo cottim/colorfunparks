@@ -34,19 +34,19 @@ export default function CreatePartyBooking() {
                     </nav>
                 </header>
 
-                <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+                <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
                     <div className="rounded-2xl border border-black/10 bg-white/80 p-5 shadow-xl backdrop-blur-sm sm:p-8">
                         <div className="flex flex-col gap-3">
-                            <p className="text-sm font-semibold tracking-wide text-red-600 uppercase">
+                            <p className="text-sm font-semibold tracking-wide text-[#35634b] uppercase">
                                 Pedido de marcação
                             </p>
                             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                                Marcar festa
+                                Vamos preparar a festa
                             </h1>
                             <p className="max-w-2xl text-gray-700">
-                                Preencha os dados da festa de acordo com o que
-                                pretende. A nossa equipa confirmará
-                                posteriormente a disponibilidade.
+                                Preenche os dados pela ordem apresentada. A
+                                nossa equipa confirmará posteriormente a
+                                disponibilidade e todos os detalhes.
                             </p>
                         </div>
 

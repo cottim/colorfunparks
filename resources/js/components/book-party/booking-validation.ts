@@ -1,68 +1,93 @@
 import { isAfter, isBefore, isValid, parseISO } from 'date-fns';
 import type { BookingDateRange } from '@/components/book-party/booking-date-range';
-import type { BookingData } from '@/components/book-party/types';
+import { partyTimes } from '@/components/book-party/booking-options';
+import type { BookingData, BookingStep } from '@/components/book-party/types';
 
-export type BookingDetailsValidation = {
+export type BookingValidation = {
     isValid: boolean;
-    errors: BookingDetailsErrors;
+    errors: BookingErrors;
 };
 
-export type PartyChildErrors = {
-    name?: string;
-    birthDate?: string;
-};
-
-export type ChildrenErrors = {
-    message?: string;
-    byId: Record<string, PartyChildErrors>;
-};
-
-export type BookingDetailsErrors = {
-    children?: ChildrenErrors;
+export type BookingErrors = {
+    contactName?: string;
+    contactMethod?: string;
     email?: string;
+    phone?: string;
+    privacyAccepted?: string;
+    termsAccepted?: string;
+    park?: string;
+    name?: string;
+    age?: string;
     guests?: string;
     partyDate?: string;
+    partyTime?: string;
+    program?: string;
 };
 
-export function validateBookingDetails(
+const bookingStepErrorFields: Record<
+    BookingStep,
+    readonly (keyof BookingErrors)[]
+> = {
+    contact: [
+        'contactName',
+        'contactMethod',
+        'email',
+        'phone',
+        'privacyAccepted',
+        'termsAccepted',
+    ],
+    park: ['park'],
+    child: ['name', 'age'],
+    details: ['guests', 'partyDate', 'partyTime'],
+    program: ['program'],
+};
+
+export function validateBooking(
     data: BookingData,
     partyDateRange: BookingDateRange,
-): BookingDetailsValidation {
-    const errors: BookingDetailsErrors = {};
+): BookingValidation {
+    const errors: BookingErrors = {};
 
-    const childrenErrorsById: Record<string, PartyChildErrors> = {};
-
-    for (const child of data.children) {
-        const childErrors: PartyChildErrors = {};
-
-        if (child.name.trim() === '') {
-            childErrors.name = 'Indica o nome da criança.';
-        }
-
-        if (child.birthDate === '') {
-            childErrors.birthDate = 'Indica a data de nascimento.';
-        }
-
-        if (Object.keys(childErrors).length > 0) {
-            childrenErrorsById[child.id] = childErrors;
-        }
+    if (data.contact.name.trim() === '') {
+        errors.contactName = 'Indica o teu nome.';
     }
 
-    if (data.children.length === 0) {
-        errors.children = {
-            message: 'Adiciona pelo menos uma criança.',
-            byId: {},
-        };
-    } else if (Object.keys(childrenErrorsById).length > 0) {
-        errors.children = {
-            byId: childrenErrorsById,
-        };
+    const hasEmail = data.contact.email.trim() !== '';
+    const hasPhone = data.contact.phone.trim() !== '';
+
+    if (!hasEmail && !hasPhone) {
+        errors.contactMethod = 'Indica um email ou número de telefone.';
     }
 
-    if (data.email.trim() === '') {
-        errors.email = 'Indica um endereço de email.';
-    } else if (!hasValidEmail(data.email)) {
+    if (hasEmail && !hasValidEmail(data.contact.email)) {
         errors.email = 'Indica um endereço de email válido.';
+    }
+
+    if (hasPhone && !hasValidPhone(data.contact.phone)) {
+        errors.phone = 'Indica um número de telefone válido.';
+    }
+
+    if (!data.contact.privacyAccepted) {
+        errors.privacyAccepted =
+            'É necessário aceitar a Política de Privacidade.';
+    }
+
+    if (!data.contact.termsAccepted) {
+        errors.termsAccepted = 'É necessário aceitar os Termos e Condições.';
+    }
+
+    if (!data.park) {
+        errors.park = 'Escolhe o parque pretendido.';
+    }
+
+    if (data.child.name.trim() === '') {
+        errors.name = 'Indica o nome da criança.';
+    }
+
+    if (data.child.age.trim() === '') {
+        errors.age = 'Indica a idade que a criança vai celebrar.';
+    } else if (!hasValidAge(data.child.age)) {
+        errors.age = 'Indica uma idade válida.';
     }
 
     if (data.guests.trim() === '') {
@@ -86,11 +111,35 @@ export function validateBookingDetails(
         }
     }
 
+    if (data.partyTime === '') {
+        errors.partyTime = 'Escolhe o horário pretendido.';
+    } else if (!partyTimes.includes(data.partyTime)) {
+        errors.partyTime = 'Escolhe um horário válido.';
+    }
+
+    if (!data.program) {
+        errors.program = 'Escolhe o programa pretendido.';
+    }
+
     return {
         isValid: Object.keys(errors).length === 0,
         errors,
     };
 }
+
+export function isBookingStepValid(
+    step: BookingStep,
+    errors: BookingErrors,
+): boolean {
+    return bookingStepErrorFields[step].every((field) => !errors[field]);
+}
+
+function hasValidAge(age: string): boolean {
+    const numericAge = Number(age);
+
+    return Number.isInteger(numericAge) && numericAge >= 1 && numericAge <= 99;
+}
+
 function hasValidGuestCount(guests: string): boolean {
     const guestCount = Number(guests);
 
@@ -101,4 +150,10 @@ function hasValidGuestCount(guests: string): boolean {
 
 function hasValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+$/.test(email);
+}
+
+function hasValidPhone(phone: string): boolean {
+    const digits = phone.replace(/\D/g, '');
+
+    return digits.length >= 9 && digits.length <= 15;
 }

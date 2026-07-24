@@ -1,7 +1,6 @@
 export type PartyChild = {
-    id: string;
     name: string;
-    birthDate: string;
+    age: string;
 };
 
 export type Park = {
@@ -9,12 +8,33 @@ export type Park = {
     label: string;
 };
 
-export type BookingData = {
-    park: Park | null;
-    partyDate: string;
-    children: PartyChild[];
-    email: string;
-    guests: string;
+export type PartyProgram = {
+    value: string;
+    label: string;
+    description: string;
 };
 
-export type PartyChildField = 'name' | 'birthDate';
+export type ContactDetails = {
+    name: string;
+    email: string;
+    phone: string;
+    privacyAccepted: boolean;
+    termsAccepted: boolean;
+    marketingAccepted: boolean;
+};
+
+export type BookingData = {
+    contact: ContactDetails;
+    park: Park | null;
+    partyDate: string;
+    partyTime: string;
+    child: PartyChild;
+    guests: string;
+    program: PartyProgram | null;
+};
+
+export type ContactField = keyof ContactDetails;
+export type PartyChildField = keyof PartyChild;
+export type PartyDetailsField = 'partyDate' | 'partyTime' | 'guests';
+
+export type BookingStep = 'contact' | 'park' | 'child' | 'details' | 'program';

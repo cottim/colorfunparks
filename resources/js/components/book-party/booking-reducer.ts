@@ -1,9 +1,11 @@
 import { createPartyChild } from '@/components/book-party/party-child';
 import type {
     BookingData,
+    ContactField,
     Park,
-    PartyChild,
     PartyChildField,
+    PartyDetailsField,
+    PartyProgram,
 } from '@/components/book-party/types';
 
 export type BookingAction =
@@ -12,30 +14,23 @@ export type BookingAction =
           park: Park;
       }
     | {
-          type: 'child.added';
-          child: PartyChild;
-      }
-    | {
-          type: 'child.removed';
-          childId: string;
+          type: 'contact.changed';
+          field: ContactField;
+          value: string | boolean;
       }
     | {
           type: 'child.changed';
-          childId: string;
           field: PartyChildField;
           value: string;
       }
     | {
-          type: 'email.changed';
+          type: 'party.changed';
+          field: PartyDetailsField;
           value: string;
       }
     | {
-          type: 'guests.changed';
-          value: string;
-      }
-    | {
-          type: 'partyDate.changed';
-          value: string;
+          type: 'program.selected';
+          program: PartyProgram;
       };
 
 function assertNever(action: never): never {
@@ -44,11 +39,20 @@ function assertNever(action: never): never {
 
 export function createInitialBookingData(): BookingData {
     return {
+        contact: {
+            name: '',
+            email: '',
+            phone: '',
+            privacyAccepted: false,
+            termsAccepted: false,
+            marketingAccepted: false,
+        },
         park: null,
-        children: [createPartyChild()],
-        email: '',
+        child: createPartyChild(),
         guests: '',
         partyDate: '',
+        partyTime: '',
+        program: null,
     };
 }
 
@@ -62,48 +66,31 @@ export function bookingReducer(
                 ...state,
                 park: action.park,
             };
-        case 'child.added':
+        case 'contact.changed':
             return {
                 ...state,
-                children: [...state.children, action.child],
-            };
-        case 'child.removed':
-            if (state.children.length === 1) {
-                return state;
-            }
-
-            return {
-                ...state,
-                children: state.children.filter(
-                    (child) => child.id !== action.childId,
-                ),
+                contact: {
+                    ...state.contact,
+                    [action.field]: action.value,
+                },
             };
         case 'child.changed':
             return {
                 ...state,
-                children: state.children.map((child) =>
-                    child.id === action.childId
-                        ? {
-                              ...child,
-                              [action.field]: action.value,
-                          }
-                        : child,
-                ),
+                child: {
+                    ...state.child,
+                    [action.field]: action.value,
+                },
             };
-        case 'email.changed':
+        case 'party.changed':
             return {
                 ...state,
-                email: action.value,
+                [action.field]: action.value,
             };
-        case 'guests.changed':
+        case 'program.selected':
             return {
                 ...state,
-                guests: action.value,
-            };
-        case 'partyDate.changed':
-            return {
-                ...state,
-                partyDate: action.value,
+                program: action.program,
             };
 
         default:

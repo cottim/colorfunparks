@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\NewsletterSubscription;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,8 +19,11 @@ class NewsletterSubscriptionFactory extends Factory
     public function definition(): array
     {
         return [
-            'email' => fake()->unique()->safeEmail(),
+            'user_id' => User::factory(),
             'consented_at' => now(),
+            'unsubscribed_at' => null,
+            'consent_version' => NewsletterSubscription::CONSENT_VERSION,
+            'source' => NewsletterSubscription::HOMEPAGE_SOURCE,
         ];
     }
 }

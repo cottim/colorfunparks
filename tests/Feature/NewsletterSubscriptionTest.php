@@ -1,50 +1,74 @@
 <?php
 
 use App\Models\NewsletterSubscription;
+use App\Models\User;
 
 test('a visitor can subscribe to the newsletter', function () {
-    $response = $this
-        ->from(route('home'))
-        ->post(route('newsletter-subscriptions.store'), [
-            'email' => '  VISITOR@EXAMPLE.COM ',
-            'privacy_consent' => '1',
-        ]);
+    $response = $this->postJson(route('newsletter-subscriptions.store'), [
+        'email' => '  VISITOR@EXAMPLE.COM ',
+        'privacy_consent' => true,
+    ]);
 
-    $response->assertRedirect(route('home'))->assertSessionHasNoErrors();
+    $response->assertOk()->assertExactJson([
+        'message' => 'Se este email ainda não recebia as nossas novidades, a inscrição foi registada.',
+    ]);
 
+    $user = User::query()->where('email', 'visitor@example.com')->sole();
     $subscription = NewsletterSubscription::query()->sole();
 
-    expect($subscription->email)
-        ->toBe('visitor@example.com')
+    expect($user->name)
+        ->toBe('')
+        ->and($user->email_verified_at)
+        ->toBeNull()
+        ->and($subscription->user->is($user))
+        ->toBeTrue()
         ->and($subscription->consented_at)
-        ->not->toBeNull();
+        ->not->toBeNull()
+        ->and($subscription->consent_version)
+        ->toBe(NewsletterSubscription::CONSENT_VERSION)
+        ->and($subscription->source)
+        ->toBe(NewsletterSubscription::HOMEPAGE_SOURCE);
 });
 
 test('a newsletter subscription requires a valid email and consent', function () {
-    $response = $this
-        ->from(route('home'))
-        ->post(route('newsletter-subscriptions.store'), [
-            'email' => 'invalid-email',
-        ]);
+    $response = $this->postJson(route('newsletter-subscriptions.store'), [
+        'email' => 'invalid-email',
+    ]);
 
     $response
-        ->assertRedirect(route('home'))
-        ->assertSessionHasErrors(['email', 'privacy_consent']);
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email', 'privacy_consent']);
 });
 
-test('an email address cannot subscribe more than once', function () {
-    NewsletterSubscription::factory()->create([
+test('subscribing repeatedly returns the same neutral response', function () {
+    $user = User::factory()->create([
         'email' => 'visitor@example.com',
     ]);
 
-    $response = $this
-        ->from(route('home'))
-        ->post(route('newsletter-subscriptions.store'), [
+    $firstResponse = $this->postJson(
+        route('newsletter-subscriptions.store'),
+        [
             'email' => 'VISITOR@EXAMPLE.COM',
-            'privacy_consent' => '1',
-        ]);
+            'privacy_consent' => true,
+        ],
+    );
+    $secondResponse = $this->postJson(
+        route('newsletter-subscriptions.store'),
+        [
+            'email' => 'visitor@example.com',
+            'privacy_consent' => true,
+        ],
+    );
 
-    $response
-        ->assertRedirect(route('home'))
-        ->assertSessionHasErrors('email');
+    $expectedResponse = [
+        'message' => 'Se este email ainda não recebia as nossas novidades, a inscrição foi registada.',
+    ];
+
+    $firstResponse->assertOk()->assertExactJson($expectedResponse);
+    $secondResponse->assertOk()->assertExactJson($expectedResponse);
+
+    expect(User::query()->where('email', $user->email)->count())
+        ->toBe(1)
+        ->and(NewsletterSubscription::query()->count())
+        ->toBe(1);
 });

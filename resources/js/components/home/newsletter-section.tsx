@@ -1,5 +1,7 @@
-import { Form, Link } from '@inertiajs/react';
+import { Link, useHttp } from '@inertiajs/react';
 import { MailIcon } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import NewsletterSubscriptionController from '@/actions/App/Http/Controllers/NewsletterSubscriptionController';
 import InputError from '@/components/input-error';
 import { CtaButton } from '@/components/ui/cta-button';
@@ -8,7 +10,58 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { privacyPolicy } from '@/routes/legal';
 
+type NewsletterData = {
+    email: string;
+    privacy_consent: boolean;
+};
+
+type NewsletterResponse = {
+    message: string;
+};
+
+type Feedback = {
+    type: 'success' | 'error';
+    message: string;
+};
+
 export function NewsletterSection() {
+    const { data, setData, post, reset, errors, processing } = useHttp<
+        NewsletterData,
+        NewsletterResponse
+    >({
+        email: '',
+        privacy_consent: false,
+    });
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+    function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        post(NewsletterSubscriptionController.url(), {
+            onBefore: () => setFeedback(null),
+            onSuccess: (response) => {
+                reset();
+                setFeedback({
+                    type: 'success',
+                    message: response.message,
+                });
+            },
+            onError: () => setFeedback(null),
+            onNetworkError: () =>
+                setFeedback({
+                    type: 'error',
+                    message:
+                        'Sem ligação à internet. Verifica a ligação e tenta novamente.',
+                }),
+            onHttpException: () =>
+                setFeedback({
+                    type: 'error',
+                    message:
+                        'Não foi possível concluir a inscrição. Tenta novamente dentro de alguns instantes.',
+                }),
+        });
+    }
+
     return (
         <section
             aria-labelledby="newsletter-title"
@@ -32,90 +85,100 @@ export function NewsletterSection() {
                         </p>
                     </div>
 
-                    <Form
-                        action={NewsletterSubscriptionController()}
-                        resetOnSuccess
-                        disableWhileProcessing
+                    <form
+                        onSubmit={submit}
                         className="rounded-2xl bg-white p-5 text-gray-900 shadow-lg sm:p-6"
                     >
-                        {({ errors, processing, recentlySuccessful }) => (
-                            <div className="grid gap-5">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="newsletter-email">
-                                        Email
-                                    </Label>
-                                    <Input
-                                        id="newsletter-email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        inputMode="email"
-                                        placeholder="nome@exemplo.pt"
+                        <div className="grid gap-5">
+                            <div className="grid gap-2">
+                                <Label htmlFor="newsletter-email">Email</Label>
+                                <Input
+                                    id="newsletter-email"
+                                    name="email"
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(event) =>
+                                        setData('email', event.target.value)
+                                    }
+                                    autoComplete="email"
+                                    inputMode="email"
+                                    placeholder="nome@exemplo.pt"
+                                    required
+                                    aria-invalid={
+                                        errors.email ? true : undefined
+                                    }
+                                    className="h-11 bg-white"
+                                />
+                                <InputError message={errors.email} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        id="newsletter-privacy-consent"
+                                        name="privacy_consent"
+                                        type="checkbox"
+                                        checked={data.privacy_consent}
+                                        onChange={(event) =>
+                                            setData(
+                                                'privacy_consent',
+                                                event.target.checked,
+                                            )
+                                        }
                                         required
                                         aria-invalid={
-                                            errors.email ? true : undefined
+                                            errors.privacy_consent
+                                                ? true
+                                                : undefined
                                         }
-                                        className="h-11 bg-white"
+                                        className="mt-1 size-4 shrink-0 accent-red-500"
                                     />
-                                    <InputError message={errors.email} />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <div className="flex items-start gap-3">
-                                        <input
-                                            id="newsletter-privacy-consent"
-                                            name="privacy_consent"
-                                            type="checkbox"
-                                            value="1"
-                                            required
-                                            aria-invalid={
-                                                errors.privacy_consent
-                                                    ? true
-                                                    : undefined
-                                            }
-                                            className="mt-1 size-4 shrink-0 accent-red-500"
-                                        />
-                                        <Label
-                                            htmlFor="newsletter-privacy-consent"
-                                            className="block text-sm leading-6 font-normal"
+                                    <Label
+                                        htmlFor="newsletter-privacy-consent"
+                                        className="block text-sm leading-6 font-normal"
+                                    >
+                                        Aceito receber comunicações da Color Fun
+                                        Parks e confirmo que li a{' '}
+                                        <Link
+                                            href={privacyPolicy()}
+                                            className="font-semibold text-green-800 underline underline-offset-4"
                                         >
-                                            Aceito receber comunicações da Color
-                                            Fun Parks e confirmo que li a{' '}
-                                            <Link
-                                                href={privacyPolicy()}
-                                                className="font-semibold text-green-800 underline underline-offset-4"
-                                            >
-                                                Política de Privacidade
-                                            </Link>
-                                            .
-                                        </Label>
-                                    </div>
-                                    <InputError
-                                        message={errors.privacy_consent}
-                                    />
+                                            Política de Privacidade
+                                        </Link>
+                                        .
+                                    </Label>
                                 </div>
-
-                                <CtaButton
-                                    type="submit"
-                                    attention="shine"
-                                    disabled={processing}
-                                    className="h-11 w-full sm:w-fit"
-                                    data-test="newsletter-submit"
-                                >
-                                    {processing && <Spinner />}
-                                    Quero receber novidades
-                                </CtaButton>
-
-                                <p
-                                    aria-live="polite"
-                                    className="min-h-5 text-sm font-semibold text-green-700"
-                                >
-                                    {recentlySuccessful &&
-                                        'Inscrição concluída. Até breve!'}
-                                </p>
+                                <InputError message={errors.privacy_consent} />
                             </div>
-                        )}
-                    </Form>
+
+                            <CtaButton
+                                type="submit"
+                                attention="shine"
+                                disabled={processing}
+                                className="h-11 w-full sm:w-fit"
+                                data-test="newsletter-submit"
+                            >
+                                {processing && <Spinner />}
+                                Quero receber novidades
+                            </CtaButton>
+
+                            <p
+                                role={
+                                    feedback?.type === 'error'
+                                        ? 'alert'
+                                        : 'status'
+                                }
+                                aria-live="polite"
+                                className={`min-h-5 text-sm font-semibold ${
+                                    feedback?.type === 'error'
+                                        ? 'text-red-600'
+                                        : 'text-green-700'
+                                }`}
+                            >
+                                {feedback?.message}
+                            </p>
+                        </div>
+                    </form>
                 </div>
             </div>
         </section>
