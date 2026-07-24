@@ -32,6 +32,7 @@ class StoreNewsletterSubscriptionRequest extends FormRequest
                 'max:255',
             ],
             'privacy_consent' => ['required', 'accepted'],
+            'website' => ['nullable', 'max:0'],
         ];
     }
 
@@ -47,6 +48,7 @@ class StoreNewsletterSubscriptionRequest extends FormRequest
             'email.email' => 'Indica um endereço de email válido.',
             'privacy_consent.accepted' => 'É necessário aceitar a Política de Privacidade.',
             'privacy_consent.required' => 'É necessário aceitar a Política de Privacidade.',
+            'website.max' => 'Não foi possível concluir a inscrição.',
         ];
     }
 

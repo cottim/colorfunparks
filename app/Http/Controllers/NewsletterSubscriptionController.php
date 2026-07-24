@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Newsletter\SubscribeToNewsletter;
 use App\Http\Requests\StoreNewsletterSubscriptionRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 
 class NewsletterSubscriptionController extends Controller
 {
@@ -15,7 +16,19 @@ class NewsletterSubscriptionController extends Controller
         $subscribeToNewsletter->handle($request->validated('email'));
 
         return response()->json([
-            'message' => 'Se este email ainda não recebia as nossas novidades, a inscrição foi registada.',
+            'message' => 'Se o endereço puder ser subscrito, receberás um email para confirmar a inscrição.',
+            'masked_email' => Str::mask(
+                $request->validated('email'),
+                '*',
+                1,
+                max(
+                    1,
+                    Str::length(Str::before($request->validated('email'), '@')) - 1,
+                ),
+            ),
+            'expiration_minutes' => (int) config(
+                'newsletter.confirmation_expiration_minutes',
+            ),
         ]);
     }
 }

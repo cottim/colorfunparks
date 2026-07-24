@@ -2,33 +2,68 @@
 
 namespace App\Actions\Newsletter;
 
+use App\Mail\ConfirmNewsletterSubscriptionMail;
 use App\Models\NewsletterSubscription;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\NewsletterSubscriptionStatus;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class SubscribeToNewsletter
 {
     public function handle(string $email): NewsletterSubscription
     {
-        return DB::transaction(function () use ($email): NewsletterSubscription {
-            $user = User::query()->firstOrCreate(
-                ['email' => $email],
-                [
-                    'name' => '',
-                    'password' => Str::random(64),
-                ],
-            );
+        $lockName = 'newsletter-subscription:'.hash('sha256', $email);
 
-            return $user->newsletterSubscription()->updateOrCreate(
-                [],
-                [
+        return Cache::lock($lockName, 10)->block(
+            3,
+            function () use ($email): NewsletterSubscription {
+                $subscription = NewsletterSubscription::query()
+                    ->firstOrNew(['email' => $email]);
+
+                if (
+                    $subscription->exists
+                    && $subscription->status === NewsletterSubscriptionStatus::Confirmed
+                    && $subscription->unsubscribed_at === null
+                ) {
+                    return $subscription;
+                }
+
+                $subscription->fill([
+                    'status' => NewsletterSubscriptionStatus::Pending,
                     'consented_at' => now(),
                     'unsubscribed_at' => null,
                     'consent_version' => NewsletterSubscription::CONSENT_VERSION,
                     'source' => NewsletterSubscription::HOMEPAGE_SOURCE,
-                ],
-            );
-        });
+                ]);
+
+                $resendAvailableAt = $subscription->confirmation_sent_at?->addMinutes(
+                    (int) config('newsletter.confirmation_resend_cooldown_minutes'),
+                );
+
+                if ($resendAvailableAt !== null && $resendAvailableAt->isFuture()) {
+                    $subscription->save();
+
+                    return $subscription;
+                }
+
+                $plainTextToken = Str::random(64);
+
+                $subscription->fill([
+                    'confirmation_token_hash' => hash('sha256', $plainTextToken),
+                    'confirmation_sent_at' => now(),
+                    'confirmed_at' => null,
+                ])->save();
+
+                Mail::to($subscription->email)->send(
+                    new ConfirmNewsletterSubscriptionMail(
+                        $subscription,
+                        $plainTextToken,
+                    ),
+                );
+
+                return $subscription;
+            },
+        );
     }
 }

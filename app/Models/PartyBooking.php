@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Models;
+
+use App\PartyBookingStatus;
+use Database\Factories\PartyBookingFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property PartyBookingStatus $status
+ * @property string $park
+ * @property string $child_name
+ * @property int $child_age
+ * @property Carbon $party_date
+ * @property string $party_time
+ * @property int $guests
+ * @property string $program
+ * @property string|null $contact_phone
+ * @property Carbon $privacy_accepted_at
+ * @property Carbon $terms_accepted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User $user
+ */
+#[Fillable([
+    'user_id',
+    'status',
+    'park',
+    'child_name',
+    'child_age',
+    'party_date',
+    'party_time',
+    'guests',
+    'program',
+    'contact_phone',
+    'privacy_accepted_at',
+    'terms_accepted_at',
+])]
+class PartyBooking extends Model
+{
+    /** @use HasFactory<PartyBookingFactory> */
+    use HasFactory;
+
+    protected $attributes = [
+        'status' => PartyBookingStatus::Pending->value,
+    ];
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'status' => PartyBookingStatus::class,
+            'party_date' => 'date',
+            'privacy_accepted_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
+        ];
+    }
+}
