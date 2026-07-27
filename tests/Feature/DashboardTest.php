@@ -7,10 +7,20 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('staff can visit the dashboard', function () {
+    $staff = User::factory()->staff()->create();
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $this->actingAs($staff)
+        ->get(route('dashboard'))
+        ->assertRedirect(route('management.index'));
+});
+
+test('customers use their account instead of the staff dashboard', function () {
+    $customer = User::factory()->create();
+
+    $this->actingAs($customer)
+        ->get(route('dashboard'))
+        ->assertForbidden();
+
+    $this->get(route('account.index'))->assertOk();
 });

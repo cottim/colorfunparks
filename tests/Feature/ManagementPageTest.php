@@ -18,7 +18,7 @@ test('customers cannot access the management page', function () {
         ->assertForbidden();
 });
 
-test('staff can view users marketing consent and party bookings', function () {
+test('staff can view the management dashboard', function () {
     $customer = User::factory()->create([
         'name' => 'Maria Cliente',
         'email' => 'maria@example.com',
@@ -39,15 +39,32 @@ test('staff can view users marketing consent and party bookings', function () {
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->component('management/index')
-                ->where('stats.users', 2)
+                ->component('management/dashboard')
+                ->where('stats.customers', 1)
                 ->where('stats.marketing', 1)
                 ->where('stats.pending_bookings', 1)
-                ->has('users.data', 2)
-                ->where('users.data.0.role.value', 'staff')
-                ->where('users.data.1.email', 'maria@example.com')
-                ->where('users.data.1.marketing.value', 'accepted')
-                ->where('users.data.1.party_bookings_count', 1)
+                ->has('recent_bookings', 1)
+                ->where('recent_bookings.0.child_name', 'Leonor'),
+        );
+
+    $this->actingAs($staff)
+        ->get(route('management.customers.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('management/customers/index')
+                ->has('customers.data', 1)
+                ->where('customers.data.0.email', 'maria@example.com')
+                ->where('customers.data.0.marketing.value', 'accepted')
+                ->where('customers.data.0.party_bookings_count', 1),
+        );
+
+    $this->actingAs($staff)
+        ->get(route('management.bookings.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('management/bookings/index')
                 ->has('party_bookings.data', 1)
                 ->where('party_bookings.data.0.customer.email', 'maria@example.com')
                 ->where('party_bookings.data.0.child.name', 'Leonor')

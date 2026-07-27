@@ -33,6 +33,30 @@ export type BookingData = {
     program: PartyProgram | null;
 };
 
+export type BookingOptions = {
+    maxBookingMonthsAhead: number;
+    parks: Park[];
+    programs: PartyProgram[];
+    partyTimes: string[];
+};
+
+export type PartyBookingPayload = {
+    contact_name: string;
+    email: string;
+    phone: string;
+    privacy_accepted: boolean;
+    terms_accepted: boolean;
+    marketing_accepted: boolean;
+    park: string;
+    child_name: string;
+    child_age: string;
+    party_date: string;
+    party_time: string;
+    guests: string;
+    program: string;
+    website: string;
+};
+
 export type ContactField = keyof ContactDetails;
 export type PartyChildField = keyof PartyChild;
 export type PartyDetailsField = 'partyDate' | 'partyTime' | 'guests';

@@ -2,11 +2,16 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
 import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
 import { BookParty } from '@/components/book-party/book-party';
+import type { BookingOptions } from '@/components/book-party/types';
 import { PublicFooter } from '@/components/public-footer';
 import { Separator } from '@/components/ui/separator';
 import { home } from '@/routes';
 
-export default function CreatePartyBooking() {
+export default function CreatePartyBooking({
+    bookingOptions,
+}: {
+    bookingOptions: BookingOptions;
+}) {
     return (
         <>
             <Head title="Marcar festa" />
@@ -52,7 +57,7 @@ export default function CreatePartyBooking() {
 
                         <Separator className="my-6 bg-black/10 sm:my-8" />
 
-                        <BookParty />
+                        <BookParty bookingOptions={bookingOptions} />
                     </div>
                 </main>
 

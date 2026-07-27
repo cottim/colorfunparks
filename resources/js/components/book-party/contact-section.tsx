@@ -175,6 +175,7 @@ export function ContactSection({
                     onChange={(checked) =>
                         changeContact('marketingAccepted', checked)
                     }
+                    error={showErrors ? errors.marketingAccepted : undefined}
                 >
                     Quero receber campanhas e novidades da Color Fun Parks.
                     <span className="ml-1 text-gray-500">(Opcional)</span>

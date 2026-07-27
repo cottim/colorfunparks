@@ -3,7 +3,9 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
+import CustomerLoginLayout from '@/layouts/auth/customer-login-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import CustomerAccountLayout from '@/layouts/customer-account-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -16,6 +18,10 @@ createInertiaApp({
             case name.startsWith('legal/'):
             case name.startsWith('party-bookings/'):
                 return null;
+            case name.startsWith('account/'):
+                return CustomerAccountLayout;
+            case name === 'auth/login':
+                return CustomerLoginLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

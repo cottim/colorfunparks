@@ -1,6 +1,5 @@
 import { isAfter, isBefore, isValid, parseISO } from 'date-fns';
 import type { BookingDateRange } from '@/components/book-party/booking-date-range';
-import { partyTimes } from '@/components/book-party/booking-options';
 import type { BookingData, BookingStep } from '@/components/book-party/types';
 
 export type BookingValidation = {
@@ -15,6 +14,7 @@ export type BookingErrors = {
     phone?: string;
     privacyAccepted?: string;
     termsAccepted?: string;
+    marketingAccepted?: string;
     park?: string;
     name?: string;
     age?: string;
@@ -35,6 +35,7 @@ const bookingStepErrorFields: Record<
         'phone',
         'privacyAccepted',
         'termsAccepted',
+        'marketingAccepted',
     ],
     park: ['park'],
     child: ['name', 'age'],
@@ -45,6 +46,7 @@ const bookingStepErrorFields: Record<
 export function validateBooking(
     data: BookingData,
     partyDateRange: BookingDateRange,
+    partyTimes: readonly string[],
 ): BookingValidation {
     const errors: BookingErrors = {};
 
@@ -74,6 +76,11 @@ export function validateBooking(
 
     if (!data.contact.termsAccepted) {
         errors.termsAccepted = 'É necessário aceitar os Termos e Condições.';
+    }
+
+    if (data.contact.marketingAccepted && !hasEmail) {
+        errors.marketingAccepted =
+            'Indica um email para receber campanhas e novidades.';
     }
 
     if (!data.park) {

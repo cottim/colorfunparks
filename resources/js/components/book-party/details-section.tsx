@@ -4,7 +4,6 @@ import type { Dispatch } from 'react';
 import { useState } from 'react';
 import { pt } from 'react-day-picker/locale';
 import type { BookingDateRange } from '@/components/book-party/booking-date-range';
-import { partyTimes } from '@/components/book-party/booking-options';
 import type { BookingAction } from '@/components/book-party/booking-reducer';
 import { BookingSection } from '@/components/book-party/booking-section';
 import type { BookingSectionWorkflow } from '@/components/book-party/booking-section';
@@ -28,6 +27,7 @@ import {
 type DetailsSectionProps = {
     data: BookingData;
     partyDateRange: BookingDateRange;
+    partyTimes: readonly string[];
     errors: BookingErrors;
     showValidationErrors: boolean;
     dispatch: Dispatch<BookingAction>;
@@ -39,6 +39,7 @@ type DetailsSectionProps = {
 export function DetailsSection({
     data,
     partyDateRange,
+    partyTimes,
     errors,
     showValidationErrors,
     dispatch,

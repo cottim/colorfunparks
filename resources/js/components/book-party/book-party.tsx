@@ -1,7 +1,7 @@
+import { useForm } from '@inertiajs/react';
 import { useReducer, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createBookingDateRange } from '@/components/book-party/booking-date-range';
-import { parks, partyPrograms } from '@/components/book-party/booking-options';
 import {
     bookingReducer,
     createInitialBookingData,
@@ -13,6 +13,7 @@ import {
     isBookingStepValid,
     validateBooking,
 } from '@/components/book-party/booking-validation';
+import type { BookingErrors } from '@/components/book-party/booking-validation';
 import { ContactSection } from '@/components/book-party/contact-section';
 import { DetailsSection } from '@/components/book-party/details-section';
 import { ParkSection } from '@/components/book-party/park-section';
@@ -20,13 +21,16 @@ import { PartyChildFields } from '@/components/book-party/party-child-fields';
 import { ProgramSection } from '@/components/book-party/program-section';
 import type {
     BookingStep,
+    BookingOptions,
     ContactField,
     PartyChildField,
+    PartyBookingPayload,
     PartyDetailsField,
 } from '@/components/book-party/types';
+import { store as storePartyBooking } from '@/routes/party-bookings';
 
 type BookPartyProps = {
-    maxBookingMonthsAhead?: number;
+    bookingOptions: BookingOptions;
 };
 
 const bookingSteps: readonly BookingStep[] = [
@@ -37,7 +41,7 @@ const bookingSteps: readonly BookingStep[] = [
     'program',
 ];
 
-export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
+export function BookParty({ bookingOptions }: BookPartyProps) {
     const [data, dispatch] = useReducer(
         bookingReducer,
         undefined,
@@ -57,12 +61,29 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
         new Set(),
     );
     const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+    const bookingForm = useForm<PartyBookingPayload>(
+        createPartyBookingPayload(createInitialBookingData()),
+    );
 
-    const partyDateRange = createBookingDateRange(maxBookingMonthsAhead);
-    const validation = validateBooking(data, partyDateRange);
+    const partyDateRange = createBookingDateRange(
+        bookingOptions.maxBookingMonthsAhead,
+    );
+    const clientValidation = validateBooking(
+        data,
+        partyDateRange,
+        bookingOptions.partyTimes,
+    );
+    const errors = {
+        ...clientValidation.errors,
+        ...mapServerErrors(bookingForm.errors),
+    };
 
     function showStepErrors(step: BookingStep): boolean {
-        return hasAttemptedSubmit || attemptedSteps.has(step);
+        return (
+            hasAttemptedSubmit ||
+            attemptedSteps.has(step) ||
+            bookingForm.hasErrors
+        );
     }
 
     function commitStep(step: BookingStep) {
@@ -137,10 +158,20 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
         actions[step].forEach(summaryDispatch);
     }
 
+    function changeBooking(action: BookingAction) {
+        dispatch(action);
+
+        const errorFields = bookingActionErrorFields(action);
+
+        if (errorFields.length > 0) {
+            bookingForm.clearErrors(...errorFields);
+        }
+    }
+
     function continueFromStep(step: BookingStep) {
         setAttemptedSteps((currentSteps) => new Set(currentSteps).add(step));
 
-        if (!isBookingStepValid(step, validation.errors)) {
+        if (!isBookingStepValid(step, errors)) {
             requestAnimationFrame(() => {
                 const stepNumber = bookingSteps.indexOf(step) + 1;
 
@@ -194,8 +225,7 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
             isOpen: activeStep === step,
             isLocked: stepIndex > highestUnlockedStepIndex,
             isComplete:
-                completedSteps.has(step) &&
-                isBookingStepValid(step, validation.errors),
+                completedSteps.has(step) && isBookingStepValid(step, errors),
             onToggle: () =>
                 setActiveStep((currentStep) =>
                     currentStep === step ? null : step,
@@ -228,7 +258,7 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
             value,
         };
 
-        dispatch(action);
+        changeBooking(action);
         summaryDispatch(action);
     }
 
@@ -244,9 +274,9 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
         event.preventDefault();
         setHasAttemptedSubmit(true);
 
-        if (!validation.isValid) {
+        if (!clientValidation.isValid) {
             const firstInvalidStep = bookingSteps.find(
-                (step) => !isBookingStepValid(step, validation.errors),
+                (step) => !isBookingStepValid(step, clientValidation.errors),
             );
 
             if (firstInvalidStep) {
@@ -258,7 +288,31 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
                     .querySelector<HTMLElement>('[aria-invalid="true"]')
                     ?.focus();
             });
+
+            return;
         }
+
+        bookingForm.transform(() =>
+            createPartyBookingPayload(data, bookingForm.data.website),
+        );
+        bookingForm.submit(storePartyBooking(), {
+            onError: (serverErrors: Record<string, string>) => {
+                const mappedErrors = mapServerErrors(serverErrors);
+                const firstInvalidStep = bookingSteps.find(
+                    (step) => !isBookingStepValid(step, mappedErrors),
+                );
+
+                if (firstInvalidStep) {
+                    setActiveStep(firstInvalidStep);
+                }
+
+                requestAnimationFrame(() => {
+                    document
+                        .querySelector<HTMLElement>('[aria-invalid="true"]')
+                        ?.focus();
+                });
+            },
+        });
     }
 
     return (
@@ -269,23 +323,19 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
                 <form onSubmit={submit} noValidate className="grid gap-5">
                     <ContactSection
                         data={data}
-                        errors={validation.errors}
+                        errors={errors}
                         showErrors={showStepErrors('contact')}
-                        dispatch={dispatch}
+                        dispatch={changeBooking}
                         workflow={sectionWorkflow('contact')}
                         onFieldBlur={commitContactField}
                     />
 
                     <ParkSection
-                        parks={parks}
+                        parks={bookingOptions.parks}
                         selectedPark={data.park}
-                        error={
-                            showStepErrors('park')
-                                ? validation.errors.park
-                                : undefined
-                        }
+                        error={showStepErrors('park') ? errors.park : undefined}
                         onSelect={(park) => {
-                            dispatch({
+                            changeBooking({
                                 type: 'park.selected',
                                 park,
                             });
@@ -299,10 +349,10 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
 
                     <PartyChildFields
                         child={data.child}
-                        errors={validation.errors}
+                        errors={errors}
                         showValidationErrors={showStepErrors('child')}
                         onChange={(field, value) =>
-                            dispatch({
+                            changeBooking({
                                 type: 'child.changed',
                                 field,
                                 value,
@@ -315,24 +365,25 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
                     <DetailsSection
                         data={data}
                         partyDateRange={partyDateRange}
-                        errors={validation.errors}
+                        partyTimes={bookingOptions.partyTimes}
+                        errors={errors}
                         showValidationErrors={showStepErrors('details')}
-                        dispatch={dispatch}
+                        dispatch={changeBooking}
                         onSelectionChange={changePartySelection}
                         onFieldBlur={commitPartyField}
                         workflow={sectionWorkflow('details')}
                     />
 
                     <ProgramSection
-                        programs={partyPrograms}
+                        programs={bookingOptions.programs}
                         selectedProgram={data.program}
                         error={
                             showStepErrors('program')
-                                ? validation.errors.program
+                                ? errors.program
                                 : undefined
                         }
                         onSelect={(program) => {
-                            dispatch({
+                            changeBooking({
                                 type: 'program.selected',
                                 program,
                             });
@@ -356,19 +407,36 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
                             <button
                                 id="booking-submit"
                                 type="submit"
-                                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-[#558b6e] px-6 text-sm font-semibold text-white shadow-md transition hover:bg-[#47775d] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
+                                disabled={bookingForm.processing}
+                                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-[#558b6e] px-6 text-sm font-semibold text-white shadow-md transition hover:bg-[#47775d] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60 sm:w-auto"
                             >
-                                Verificar dados
+                                {bookingForm.processing
+                                    ? 'A enviar pedido…'
+                                    : 'Confirmar e enviar pedido'}
                             </button>
                             <p
                                 role="status"
                                 aria-live="polite"
                                 className="mt-3 min-h-5 text-sm font-semibold text-[#35634b]"
                             >
-                                {hasAttemptedSubmit &&
-                                    validation.isValid &&
-                                    'Todos os dados obrigatórios estão preenchidos.'}
+                                {bookingForm.hasErrors &&
+                                    'Não foi possível enviar. Revê os campos assinalados.'}
                             </p>
+                            <input
+                                type="text"
+                                name="website"
+                                value={bookingForm.data.website}
+                                onChange={(event) =>
+                                    bookingForm.setData(
+                                        'website',
+                                        event.target.value,
+                                    )
+                                }
+                                tabIndex={-1}
+                                autoComplete="off"
+                                className="hidden"
+                                aria-hidden="true"
+                            />
                         </div>
                     )}
                 </form>
@@ -377,4 +445,93 @@ export function BookParty({ maxBookingMonthsAhead = 3 }: BookPartyProps) {
             </div>
         </div>
     );
+}
+
+function createPartyBookingPayload(
+    data: ReturnType<typeof createInitialBookingData>,
+    website = '',
+): PartyBookingPayload {
+    return {
+        contact_name: data.contact.name,
+        email: data.contact.email,
+        phone: data.contact.phone,
+        privacy_accepted: data.contact.privacyAccepted,
+        terms_accepted: data.contact.termsAccepted,
+        marketing_accepted: data.contact.marketingAccepted,
+        park: data.park?.value ?? '',
+        child_name: data.child.name,
+        child_age: data.child.age,
+        party_date: data.partyDate,
+        party_time: data.partyTime,
+        guests: data.guests,
+        program: data.program?.value ?? '',
+        website,
+    };
+}
+
+function mapServerErrors(serverErrors: Record<string, string>): BookingErrors {
+    const fieldMap: Record<string, keyof BookingErrors> = {
+        contact_name: 'contactName',
+        email: 'email',
+        phone: 'phone',
+        privacy_accepted: 'privacyAccepted',
+        terms_accepted: 'termsAccepted',
+        marketing_accepted: 'marketingAccepted',
+        park: 'park',
+        child_name: 'name',
+        child_age: 'age',
+        party_date: 'partyDate',
+        party_time: 'partyTime',
+        guests: 'guests',
+        program: 'program',
+        website: 'contactMethod',
+    };
+
+    return Object.entries(serverErrors).reduce<BookingErrors>(
+        (mappedErrors, [field, message]) => {
+            const mappedField = fieldMap[field];
+
+            if (mappedField) {
+                mappedErrors[mappedField] = message;
+            }
+
+            return mappedErrors;
+        },
+        {},
+    );
+}
+
+function bookingActionErrorFields(
+    action: BookingAction,
+): (keyof PartyBookingPayload)[] {
+    switch (action.type) {
+        case 'park.selected':
+            return ['park'];
+        case 'program.selected':
+            return ['program'];
+        case 'child.changed':
+            return [action.field === 'name' ? 'child_name' : 'child_age'];
+        case 'party.changed':
+            return [
+                action.field === 'partyDate'
+                    ? 'party_date'
+                    : action.field === 'partyTime'
+                      ? 'party_time'
+                      : 'guests',
+            ];
+        case 'contact.changed':
+            switch (action.field) {
+                case 'name':
+                    return ['contact_name'];
+                case 'email':
+                case 'phone':
+                    return ['email', 'phone'];
+                case 'privacyAccepted':
+                    return ['privacy_accepted'];
+                case 'termsAccepted':
+                    return ['terms_accepted'];
+                case 'marketingAccepted':
+                    return ['marketing_accepted', 'email'];
+            }
+    }
 }

@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $user_id
+ * @property int|null $user_id
  * @property PartyBookingStatus $status
  * @property string $park
  * @property string $child_name
@@ -21,12 +21,14 @@ use Illuminate\Support\Carbon;
  * @property string $party_time
  * @property int $guests
  * @property string $program
+ * @property string|null $contact_name
+ * @property string|null $contact_email
  * @property string|null $contact_phone
  * @property Carbon $privacy_accepted_at
  * @property Carbon $terms_accepted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read User $user
+ * @property-read User|null $user
  */
 #[Fillable([
     'user_id',
@@ -38,6 +40,8 @@ use Illuminate\Support\Carbon;
     'party_time',
     'guests',
     'program',
+    'contact_name',
+    'contact_email',
     'contact_phone',
     'privacy_accepted_at',
     'terms_accepted_at',

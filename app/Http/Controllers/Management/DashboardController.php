@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Management;
 
-use App\Actions\Management\GetManagementOverview;
+use App\Actions\Management\GetDashboard;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ManagementController extends Controller
+class DashboardController extends Controller
 {
-    public function __invoke(GetManagementOverview $getManagementOverview): Response
+    public function __invoke(GetDashboard $getDashboard): Response
     {
         Gate::authorize('access-management');
 
         return Inertia::render(
-            'management/index',
-            $getManagementOverview->handle(),
+            'management/dashboard',
+            $getDashboard->handle(),
         );
     }
 }

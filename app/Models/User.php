@@ -33,6 +33,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read NewsletterSubscription|null $newsletterSubscription
  * @property-read Collection<int, PartyBooking> $partyBookings
+ * @property-read Collection<int, StaffInvitation> $staffInvitations
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -63,6 +64,14 @@ class User extends Authenticatable implements PasskeyUser
     public function partyBookings(): HasMany
     {
         return $this->hasMany(PartyBooking::class);
+    }
+
+    /**
+     * @return HasMany<StaffInvitation, $this>
+     */
+    public function staffInvitations(): HasMany
+    {
+        return $this->hasMany(StaffInvitation::class, 'invited_by_id');
     }
 
     public function canAccessManagement(): bool

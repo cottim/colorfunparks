@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\UserRole;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -35,6 +36,14 @@ class AppServiceProvider extends ServiceProvider
             'access-management',
             fn (User $user): bool => $user->canAccessManagement(),
         );
+        Gate::define(
+            'access-customer-account',
+            fn (User $user): bool => $user->role === UserRole::Customer,
+        );
+        Gate::define(
+            'manage-internal-users',
+            fn (User $user): bool => $user->role === UserRole::Admin,
+        );
 
         RateLimiter::for(
             'newsletter-subscriptions',
@@ -55,6 +64,40 @@ class AppServiceProvider extends ServiceProvider
                     )->by('hour-email:'.hash('sha256', $email)),
                 ];
             },
+        );
+
+        RateLimiter::for(
+            'customer-login-links',
+            function (Request $request): array {
+                $email = Str::lower(
+                    trim((string) $request->input('email')),
+                );
+
+                return [
+                    Limit::perMinute(
+                        (int) config(
+                            'customer_auth.rate_limits.per_minute_per_ip',
+                        ),
+                    )->by('minute:'.$request->ip()),
+                    Limit::perHour(
+                        (int) config(
+                            'customer_auth.rate_limits.per_hour_per_ip',
+                        ),
+                    )->by('hour-ip:'.$request->ip()),
+                    Limit::perHour(
+                        (int) config(
+                            'customer_auth.rate_limits.per_hour_per_email',
+                        ),
+                    )->by('hour-email:'.hash('sha256', $email)),
+                ];
+            },
+        );
+
+        RateLimiter::for(
+            'staff-invitations',
+            fn (Request $request): Limit => Limit::perMinute(10)->by(
+                $request->ip(),
+            ),
         );
     }
 
