@@ -65,7 +65,8 @@ test('the mobile party program carousel keeps an inset and centers selected card
     expect($component)
         ->toContain('scroll-px-1', 'px-1', 'snap-center')
         ->toContain("inline: 'center'")
-        ->toContain("behavior: reduceMotion ? 'auto' : 'smooth'");
+        ->toContain("behavior: reduceMotion ? 'auto' : 'smooth'")
+        ->toContain('animate={{ opacity: 1, y: 0 }}');
 });
 
 test('the homepage shares the account state used by its customer access', function () {

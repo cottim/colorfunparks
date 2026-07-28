@@ -430,8 +430,7 @@ function ProgramCard({
             onClick={(event) => onSelect(event.currentTarget)}
             layout={!reduceMotion}
             initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
+            animate={{ opacity: 1, y: 0 }}
             whileHover={
                 reduceMotion
                     ? undefined
