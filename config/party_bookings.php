@@ -25,20 +25,227 @@ return [
 
     'programs' => [
         [
-            'value' => 'essential',
-            'label' => 'Festa Essencial',
-            'description' => 'A proposta base para celebrar e brincar no parque.',
+            'value' => 'color',
+            'label' => 'Menu Color',
+            'description' => 'Uma opção simples, colorida e cheia de brincadeira.',
+            'accent' => 'sky',
+            'duration' => '2h30',
+            'ageRange' => '4 aos 11 anos',
+            'guestAgeRange' => '3 aos 12 anos',
+            'availability' => 'Disponibilidade sujeita a confirmação',
+            'startingPrice' => '15,50 €',
+            'includes' => [
+                'Convites em papel ou digitais',
+                'Pinturas faciais',
+                'Sala exclusiva para o lanche',
+                'Bolo de aniversário temático',
+                'Pão com fiambre ou queijo',
+                'Água e sumo',
+            ],
+            'choiceGroups' => [
+                [
+                    'value' => 'snack',
+                    'label' => 'Acompanhamento',
+                    'prompt' => 'Escolhe o acompanhamento',
+                    'description' => 'Escolhe uma opção.',
+                    'options' => [
+                        [
+                            'value' => 'fries',
+                            'label' => 'Batatas fritas',
+                            'icon' => 'fries',
+                        ],
+                        [
+                            'value' => 'popcorn',
+                            'label' => 'Pipocas',
+                            'icon' => 'popcorn',
+                        ],
+                    ],
+                ],
+                [
+                    'value' => 'dessert',
+                    'label' => 'Sobremesa',
+                    'prompt' => 'Escolhe a sobremesa',
+                    'description' => 'Escolhe uma opção.',
+                    'options' => [
+                        [
+                            'value' => 'chocolate-mousse',
+                            'label' => 'Mousse de chocolate',
+                            'icon' => 'mousse',
+                        ],
+                        [
+                            'value' => 'gelatin',
+                            'label' => 'Gelatina',
+                            'icon' => 'gelatin',
+                        ],
+                        [
+                            'value' => 'ice-cream',
+                            'label' => 'Gelado',
+                            'icon' => 'ice-cream',
+                        ],
+                    ],
+                ],
+            ],
+            'pricing' => [
+                [
+                    'label' => 'Semana',
+                    'upToTwenty' => '15,50 € / criança',
+                    'extraChild' => '14,50 € / criança',
+                ],
+                [
+                    'label' => 'Fins de semana e feriados',
+                    'upToTwenty' => '17,00 € / criança',
+                    'extraChild' => '16,00 € / criança',
+                ],
+            ],
         ],
         [
-            'value' => 'snack',
-            'label' => 'Festa com Lanche',
-            'description' => 'A experiência de festa com uma opção de lanche.',
+            'value' => 'balance',
+            'label' => 'Menu Balance',
+            'description' => 'Uma proposta equilibrada com fruta e opções sem açúcar.',
+            'accent' => 'purple',
+            'duration' => '2h30',
+            'ageRange' => '4 aos 11 anos',
+            'guestAgeRange' => '3 aos 12 anos',
+            'availability' => 'Disponibilidade sujeita a confirmação',
+            'startingPrice' => '17,50 €',
+            'includes' => [
+                'Convites em papel ou digitais',
+                'Pinturas faciais',
+                'Sala exclusiva para o lanche',
+                'Bolo de aniversário temático',
+                'Pão de cereais com fiambre ou queijo sem lactose',
+                'Tacinha de fruta',
+                'Água, sumo 100% ou néctar',
+            ],
+            'choiceGroups' => [
+                [
+                    'value' => 'dessert',
+                    'label' => 'Sobremesa',
+                    'prompt' => 'Escolhe a sobremesa',
+                    'description' => 'Escolhe uma opção.',
+                    'options' => [
+                        [
+                            'value' => 'gelatin',
+                            'label' => 'Gelatina',
+                            'icon' => 'gelatin',
+                        ],
+                        [
+                            'value' => 'sugar-free-ice-cream',
+                            'label' => 'Gelado 0% açúcar',
+                            'icon' => 'ice-cream',
+                        ],
+                    ],
+                ],
+            ],
+            'pricing' => [
+                [
+                    'label' => 'Semana',
+                    'upToTwenty' => '17,50 € / criança',
+                    'extraChild' => '16,50 € / criança',
+                ],
+                [
+                    'label' => 'Fins de semana e feriados',
+                    'upToTwenty' => '19,00 € / criança',
+                    'extraChild' => '18,00 € / criança',
+                ],
+            ],
         ],
         [
-            'value' => 'special',
-            'label' => 'Festa Especial',
-            'description' => 'Uma celebração com serviços adicionais.',
+            'value' => 'lunch-party',
+            'label' => 'Menu Lunch Party',
+            'description' => 'Uma refeição mais completa para festas à hora de almoço.',
+            'accent' => 'yellow',
+            'duration' => '2h45',
+            'ageRange' => '5 aos 11 anos',
+            'guestAgeRange' => '3 aos 12 anos',
+            'availability' => 'Sábados e feriados, às 12h30',
+            'startingPrice' => '19,00 €',
+            'includes' => [
+                'Convites em papel ou digitais',
+                'Pinturas faciais',
+                'Sala exclusiva para o lanche',
+                'Bolo de aniversário temático',
+                'Batatas fritas e nuggets',
+                'Água e sumo',
+            ],
+            'choiceGroups' => [
+                [
+                    'value' => 'main',
+                    'label' => 'Prato principal',
+                    'prompt' => 'Escolhe o prato principal',
+                    'description' => 'Escolhe uma opção.',
+                    'options' => [
+                        [
+                            'value' => 'pizza',
+                            'label' => 'Pizza',
+                            'icon' => 'pizza',
+                        ],
+                        [
+                            'value' => 'hot-dog',
+                            'label' => 'Cachorro',
+                            'icon' => 'hot-dog',
+                        ],
+                    ],
+                ],
+                [
+                    'value' => 'dessert',
+                    'label' => 'Sobremesa',
+                    'prompt' => 'Escolhe a sobremesa',
+                    'description' => 'Escolhe uma opção.',
+                    'options' => [
+                        [
+                            'value' => 'chocolate-mousse',
+                            'label' => 'Mousse de chocolate',
+                            'icon' => 'mousse',
+                        ],
+                        [
+                            'value' => 'gelatin',
+                            'label' => 'Gelatina',
+                            'icon' => 'gelatin',
+                        ],
+                        [
+                            'value' => 'ice-cream',
+                            'label' => 'Gelado',
+                            'icon' => 'ice-cream',
+                        ],
+                    ],
+                ],
+            ],
+            'pricing' => [
+                [
+                    'label' => 'Sábados e feriados',
+                    'upToTwenty' => '19,00 € / criança',
+                    'extraChild' => '18,00 € / criança',
+                ],
+            ],
         ],
+    ],
+
+    'shared_program_includes' => [
+        'Convites em papel ou digitais',
+        'Pinturas faciais',
+        'Sala exclusiva para o lanche',
+        'Bolo de aniversário temático',
+    ],
+
+    'program_badges' => [
+        [
+            'programValue' => 'color',
+            'text' => 'Mais escolhido',
+            'variant' => 'popular',
+        ],
+        [
+            'programValue' => 'balance',
+            'text' => 'Saudável',
+            'variant' => 'healthy',
+        ],
+    ],
+
+    'program_conditions' => [
+        'Pagamento mínimo de 10 crianças',
+        'Sinal de reserva de 80 € não reembolsável',
+        'Lembrança opcional: 1,50 € por criança',
+        'Uso obrigatório de meias antiderrapantes',
     ],
 
     'party_times' => $partyTimes,

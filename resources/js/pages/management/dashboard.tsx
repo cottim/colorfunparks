@@ -14,11 +14,15 @@ import {
     StatusBadge,
 } from '@/components/management/management-ui';
 import { index as managementIndex } from '@/routes/management';
-import { index as bookingsIndex } from '@/routes/management/bookings';
+import {
+    index as bookingsIndex,
+    show as bookingShow,
+} from '@/routes/management/bookings';
 import type { Status } from '@/types/management';
 
 type RecentBooking = {
     id: number;
+    reference: string;
     customer_name: string;
     child_name: string;
     party_date: string;
@@ -84,34 +88,78 @@ export default function ManagementDashboard({
                     {recentBookings.length === 0 ? (
                         <EmptyState message="Ainda não existem pedidos de festa." />
                     ) : (
-                        <div className="grid gap-3">
-                            {recentBookings.map((booking) => (
-                                <article
-                                    key={booking.id}
-                                    className="flex flex-col justify-between gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
-                                >
-                                    <div>
-                                        <p className="font-semibold">
-                                            {booking.child_name}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {booking.customer_name} ·{' '}
-                                            {formatPartyDate(
-                                                booking.party_date,
-                                            )}{' '}
-                                            às {booking.party_time}
-                                        </p>
-                                    </div>
-                                    <StatusBadge status={booking.status} />
-                                </article>
-                            ))}
+                        <>
+                            <div className="-mx-4 overflow-x-auto sm:-mx-6">
+                                <table className="w-full min-w-3xl text-left text-sm">
+                                    <thead className="border-b text-xs tracking-wide text-muted-foreground uppercase">
+                                        <tr>
+                                            <th className="px-4 py-3 font-semibold sm:pl-6">
+                                                Festa
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                Data pretendida
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                Cliente
+                                            </th>
+                                            <th className="px-4 py-3 pr-4 font-semibold sm:pr-6">
+                                                Estado
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {recentBookings.map((booking) => (
+                                            <tr
+                                                key={booking.id}
+                                                className="transition-colors hover:bg-muted/40"
+                                            >
+                                                <td className="px-4 py-4 sm:pl-6">
+                                                    <Link
+                                                        href={bookingShow(
+                                                            booking.id,
+                                                        )}
+                                                        prefetch
+                                                        className="font-bold text-[#376b50] underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:outline-none"
+                                                    >
+                                                        {booking.reference}
+                                                    </Link>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {booking.child_name}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <p className="font-medium">
+                                                        {formatPartyDate(
+                                                            booking.party_date,
+                                                        )}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {booking.party_time.slice(
+                                                            0,
+                                                            5,
+                                                        )}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-4 font-medium">
+                                                    {booking.customer_name}
+                                                </td>
+                                                <td className="px-4 py-4 pr-4 sm:pr-6">
+                                                    <StatusBadge
+                                                        status={booking.status}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             <Link
                                 href={bookingsIndex()}
-                                className="mt-2 w-fit text-sm font-semibold text-[#558b6e] hover:underline"
+                                className="mt-5 inline-block text-sm font-semibold text-[#558b6e] hover:underline"
                             >
                                 Ver todas as festas
                             </Link>
-                        </div>
+                        </>
                     )}
                 </ManagementSection>
             </div>

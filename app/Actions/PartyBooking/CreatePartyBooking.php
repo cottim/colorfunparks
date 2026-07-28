@@ -23,6 +23,7 @@ class CreatePartyBooking
      *     party_time: string,
      *     guests: int,
      *     program: string,
+     *     program_choices: array<string, string>,
      *     website: string|null
      * } $data
      */
@@ -41,6 +42,10 @@ class CreatePartyBooking
             'party_time' => $data['party_time'],
             'guests' => $data['guests'],
             'program' => $this->optionLabel('programs', $data['program']),
+            'program_choices' => $this->programChoices(
+                $data['program'],
+                $data['program_choices'],
+            ),
             'contact_name' => $data['contact_name'],
             'contact_email' => $data['email'] ?: null,
             'contact_phone' => $data['phone'] ?: null,
@@ -61,5 +66,52 @@ class CreatePartyBooking
         }
 
         abort(422);
+    }
+
+    /**
+     * @param  array<string, string>  $choices
+     * @return array<string, array{
+     *     group: string,
+     *     value: string,
+     *     label: string
+     * }>
+     */
+    private function programChoices(
+        string $programValue,
+        array $choices,
+    ): array {
+        /** @var list<array{
+         *     value: string,
+         *     choiceGroups: list<array{
+         *         value: string,
+         *         label: string,
+         *         options: list<array{value: string, label: string}>
+         *     }>
+         * }> $programs
+         */
+        $programs = config('party_bookings.programs');
+        $program = collect($programs)->firstWhere('value', $programValue);
+
+        abort_if($program === null, 422);
+
+        $selectedChoices = [];
+
+        foreach ($program['choiceGroups'] as $choiceGroup) {
+            $choiceValue = $choices[$choiceGroup['value']];
+            $choice = collect($choiceGroup['options'])->firstWhere(
+                'value',
+                $choiceValue,
+            );
+
+            abort_if($choice === null, 422);
+
+            $selectedChoices[$choiceGroup['value']] = [
+                'group' => $choiceGroup['label'],
+                'value' => $choice['value'],
+                'label' => $choice['label'],
+            ];
+        }
+
+        return $selectedChoices;
     }
 }

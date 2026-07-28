@@ -21,10 +21,12 @@ export type Pagination<T> = {
 
 export type ManagedPartyBooking = {
     id: number;
+    reference: string;
     status: Status;
     customer: {
         name: string;
         email: string;
+        phone: string | null;
     };
     park: string;
     child: {
@@ -35,6 +37,16 @@ export type ManagedPartyBooking = {
     party_time: string;
     guests: number;
     program: string;
+    program_choices: Record<
+        string,
+        {
+            group: string;
+            value: string;
+            label: string;
+        }
+    > | null;
+    total_cents: number | null;
+    payment_status: Status | null;
     created_at: string | null;
 };
 

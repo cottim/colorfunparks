@@ -26,7 +26,7 @@ export default function CustomerBookingDetail({
 }) {
     return (
         <>
-            <Head title={`Pedido #${booking.id}`} />
+            <Head title={`Festa ${booking.reference}`} />
 
             <Link
                 href={account.bookings.index()}
@@ -39,7 +39,7 @@ export default function CustomerBookingDetail({
             <header className="mt-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-bold tracking-wide text-[#558b6e] uppercase">
-                        Pedido #{booking.id}
+                        Festa {booking.reference}
                     </p>
                     <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
                         Festa de {booking.childName}

@@ -9,6 +9,7 @@ class PresentCustomerPartyBooking
     /**
      * @return array{
      *     id: int,
+     *     reference: string,
      *     status: string,
      *     statusLabel: string,
      *     park: string,
@@ -28,6 +29,7 @@ class PresentCustomerPartyBooking
     {
         return [
             'id' => $booking->id,
+            'reference' => $booking->reference(),
             'status' => $booking->status->value,
             'statusLabel' => $booking->status->label(),
             'park' => $booking->park,

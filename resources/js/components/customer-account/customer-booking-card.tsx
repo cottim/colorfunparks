@@ -36,7 +36,7 @@ export function CustomerBookingCard({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <p className="text-xs font-bold tracking-wide text-gray-500 uppercase">
-                            Pedido #{booking.id}
+                            Festa {booking.reference}
                         </p>
                         <h3 className="mt-1 text-lg font-black">
                             Festa de {booking.childName}

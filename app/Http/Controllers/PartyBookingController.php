@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Actions\Newsletter\SubscribeToNewsletter;
 use App\Actions\PartyBooking\CreatePartyBooking;
+use App\Actions\PartyBooking\GetInitialPartyProgramSelection;
 use App\Http\Requests\StorePartyBookingRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyBookingController extends Controller
 {
-    public function create(): Response
-    {
+    public function create(
+        Request $request,
+        GetInitialPartyProgramSelection $getInitialPartyProgramSelection,
+    ): Response {
+        $queryChoices = $request->query('choices', []);
+
         return Inertia::render('party-bookings/create', [
             'bookingOptions' => [
                 'maxBookingMonthsAhead' => (int) config(
@@ -22,6 +28,10 @@ class PartyBookingController extends Controller
                 'programs' => config('party_bookings.programs'),
                 'partyTimes' => config('party_bookings.party_times'),
             ],
+            'initialProgramSelection' => $getInitialPartyProgramSelection->handle(
+                $request->string('program')->toString(),
+                is_array($queryChoices) ? $queryChoices : [],
+            ),
         ]);
     }
 

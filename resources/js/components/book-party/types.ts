@@ -12,6 +12,57 @@ export type PartyProgram = {
     value: string;
     label: string;
     description: string;
+    accent: 'sky' | 'purple' | 'yellow';
+    duration: string;
+    ageRange: string;
+    guestAgeRange: string;
+    availability: string;
+    startingPrice: string;
+    includes: string[];
+    choiceGroups: PartyProgramChoiceGroup[];
+    pricing: PartyProgramPrice[];
+};
+
+export type PartyProgramChoice = {
+    value: string;
+    label: string;
+    icon: PartyProgramChoiceIcon;
+};
+
+export type PartyProgramChoiceGroup = {
+    value: string;
+    label: string;
+    prompt?: string;
+    description: string;
+    options: PartyProgramChoice[];
+};
+
+export type PartyProgramPrice = {
+    label: string;
+    upToTwenty: string;
+    extraChild: string;
+};
+
+export type PartyProgramChoiceIcon =
+    | 'fries'
+    | 'popcorn'
+    | 'mousse'
+    | 'gelatin'
+    | 'ice-cream'
+    | 'water'
+    | 'juice'
+    | 'pizza'
+    | 'hot-dog';
+
+export type PartyProgramBadge = {
+    programValue: string;
+    text: string;
+    variant?: 'popular' | 'healthy' | 'recommended' | 'value';
+};
+
+export type PartyProgramSelection = {
+    programValue: string;
+    choices: Record<string, string>;
 };
 
 export type ContactDetails = {
@@ -31,6 +82,7 @@ export type BookingData = {
     child: PartyChild;
     guests: string;
     program: PartyProgram | null;
+    programChoices: Record<string, string>;
 };
 
 export type BookingOptions = {
@@ -54,6 +106,7 @@ export type PartyBookingPayload = {
     party_time: string;
     guests: string;
     program: string;
+    program_choices: Record<string, string>;
     website: string;
 };
 

@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $party_time
  * @property int $guests
  * @property string $program
+ * @property array<string, array{group: string, value: string, label: string}>|null $program_choices
  * @property string|null $contact_name
  * @property string|null $contact_email
  * @property string|null $contact_phone
@@ -40,6 +41,7 @@ use Illuminate\Support\Carbon;
     'party_time',
     'guests',
     'program',
+    'program_choices',
     'contact_name',
     'contact_email',
     'contact_phone',
@@ -54,6 +56,16 @@ class PartyBooking extends Model
     protected $attributes = [
         'status' => PartyBookingStatus::Pending->value,
     ];
+
+    public function partyNumber(): int
+    {
+        return 1000 + (int) $this->getKey();
+    }
+
+    public function reference(): string
+    {
+        return 'CFP'.$this->partyNumber();
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -73,6 +85,7 @@ class PartyBooking extends Model
         return [
             'status' => PartyBookingStatus::class,
             'party_date' => 'date',
+            'program_choices' => 'array',
             'privacy_accepted_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
         ];

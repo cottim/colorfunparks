@@ -21,6 +21,7 @@ class GetDashboard
      *     },
      *     recent_bookings: array<int, array{
      *         id: int,
+     *         reference: string,
      *         customer_name: string,
      *         child_name: string,
      *         party_date: string,
@@ -53,6 +54,7 @@ class GetDashboard
 
                 return [
                     'id' => $partyBooking->id,
+                    'reference' => $partyBooking->reference(),
                     'customer_name' => $partyBooking->contact_name
                         ?? $customerName
                         ?? 'Sem nome',

@@ -31,13 +31,21 @@ export type BookingAction =
     | {
           type: 'program.selected';
           program: PartyProgram;
+      }
+    | {
+          type: 'program.choice.selected';
+          group: string;
+          choice: string;
       };
 
 function assertNever(action: never): never {
     throw new Error(`Unhandled booking action: ${JSON.stringify(action)}`);
 }
 
-export function createInitialBookingData(): BookingData {
+export function createInitialBookingData(
+    program: PartyProgram | null = null,
+    programChoices: Record<string, string> = {},
+): BookingData {
     return {
         contact: {
             name: '',
@@ -52,7 +60,8 @@ export function createInitialBookingData(): BookingData {
         guests: '',
         partyDate: '',
         partyTime: '',
-        program: null,
+        program,
+        programChoices,
     };
 }
 
@@ -91,6 +100,18 @@ export function bookingReducer(
             return {
                 ...state,
                 program: action.program,
+                programChoices:
+                    state.program?.value === action.program.value
+                        ? state.programChoices
+                        : {},
+            };
+        case 'program.choice.selected':
+            return {
+                ...state,
+                programChoices: {
+                    ...state.programChoices,
+                    [action.group]: action.choice,
+                },
             };
 
         default:

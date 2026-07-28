@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
 import { PublicFooter } from '@/components/public-footer';
+import { PublicHeader } from '@/components/public-header';
 import { home } from '@/routes';
 
 type LegalPageLayoutProps = {
@@ -21,27 +21,18 @@ export function LegalPageLayout({
             <Head title={title} />
 
             <div className="flex min-h-svh flex-col bg-linear-to-b from-[#FFFE00] to-[#FFCD00] text-gray-900">
-                <header className="border-b border-black/10">
-                    <nav
-                        aria-label="Navegação principal"
-                        className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8"
+                <PublicHeader>
+                    <Link
+                        href={home()}
+                        className="inline-flex size-10 shrink-0 items-center justify-center gap-2 rounded-full px-2 text-sm font-semibold hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none sm:w-auto sm:px-3"
                     >
-                        <Link href={home()} aria-label="Color Fun Parks">
-                            <AnimatedColorFunParksLogo className="w-full max-w-3xs overflow-visible" />
-                        </Link>
-
-                        <Link
-                            href={home()}
-                            className="inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
-                        >
-                            <ArrowLeftIcon className="size-4" />
-                            <span className="hidden sm:inline">
-                                Voltar ao site
-                            </span>
-                            <span className="sm:hidden">Voltar</span>
-                        </Link>
-                    </nav>
-                </header>
+                        <ArrowLeftIcon className="size-4" aria-hidden="true" />
+                        <span className="hidden sm:inline">Voltar ao site</span>
+                        <span className="sr-only sm:hidden">
+                            Voltar ao site
+                        </span>
+                    </Link>
+                </PublicHeader>
 
                 <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
                     <article className="rounded-2xl border border-black/10 bg-white/90 p-5 shadow-xl backdrop-blur-sm sm:p-8 lg:p-10">

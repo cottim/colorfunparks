@@ -22,6 +22,7 @@ export type BookingErrors = {
     partyDate?: string;
     partyTime?: string;
     program?: string;
+    programChoices?: string;
 };
 
 const bookingStepErrorFields: Record<
@@ -40,7 +41,7 @@ const bookingStepErrorFields: Record<
     park: ['park'],
     child: ['name', 'age'],
     details: ['guests', 'partyDate', 'partyTime'],
-    program: ['program'],
+    program: ['program', 'programChoices'],
 };
 
 export function validateBooking(
@@ -126,6 +127,18 @@ export function validateBooking(
 
     if (!data.program) {
         errors.program = 'Escolhe o programa pretendido.';
+    } else {
+        const hasInvalidChoice = data.program.choiceGroups.some((group) => {
+            const selectedChoice = data.programChoices[group.value];
+
+            return !group.options.some(
+                (option) => option.value === selectedChoice,
+            );
+        });
+
+        if (hasInvalidChoice) {
+            errors.programChoices = 'Completa as escolhas do menu selecionado.';
+        }
     }
 
     return {

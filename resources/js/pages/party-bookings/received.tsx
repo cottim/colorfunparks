@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle2Icon, LogInIcon } from 'lucide-react';
-import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-logo';
 import { PublicFooter } from '@/components/public-footer';
+import { PublicHeader } from '@/components/public-header';
 import { Button } from '@/components/ui/button';
 import { home, login } from '@/routes';
 
@@ -11,13 +11,7 @@ export default function PartyBookingReceived() {
             <Head title="Pedido recebido" />
 
             <div className="flex min-h-svh flex-col bg-linear-to-b from-[#FFFE00] to-[#FFCD00] text-gray-900">
-                <header className="border-b border-black/10">
-                    <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href={home()} aria-label="Color Fun Parks">
-                            <AnimatedColorFunParksLogo className="w-full max-w-3xs overflow-visible" />
-                        </Link>
-                    </div>
-                </header>
+                <PublicHeader />
 
                 <main className="mx-auto flex w-full max-w-3xl flex-1 items-center px-4 py-12 sm:px-6 lg:px-8">
                     <section className="w-full rounded-3xl border border-black/10 bg-white/90 p-7 text-center shadow-xl backdrop-blur-sm sm:p-10">

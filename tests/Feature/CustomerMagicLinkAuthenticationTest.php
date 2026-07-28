@@ -101,6 +101,7 @@ test('a valid emailed link creates and authenticates a customer', function () {
 
     $this->get($loginMail->loginUrl)
         ->assertRedirect(route('account.index'))
+        ->assertSessionHas('auth.password_confirmed_at')
         ->assertCookie(Auth::guard()->getRecallerName());
 
     $customer = User::query()->sole();

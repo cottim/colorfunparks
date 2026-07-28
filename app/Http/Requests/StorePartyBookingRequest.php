@@ -22,13 +22,31 @@ class StorePartyBookingRequest extends FormRequest
     {
         /** @var list<array{value: string, label: string}> $parks */
         $parks = config('party_bookings.parks');
-        /** @var list<array{value: string, label: string, description: string}> $programs */
+        /** @var list<array{
+         *     value: string,
+         *     label: string,
+         *     choiceGroups: list<array{
+         *         value: string,
+         *         options: list<array{value: string}>
+         *     }>
+         * }> $programs
+         */
         $programs = config('party_bookings.programs');
         /** @var list<string> $partyTimes */
         $partyTimes = config('party_bookings.party_times');
         $latestPartyDate = today()
             ->addMonths((int) config('party_bookings.max_months_ahead'))
             ->toDateString();
+        $choiceGroupValues = collect($programs)
+            ->flatMap(
+                fn (array $program): array => array_column(
+                    $program['choiceGroups'],
+                    'value',
+                ),
+            )
+            ->unique()
+            ->values()
+            ->all();
 
         return [
             'contact_name' => ['required', 'string', 'max:255'],
@@ -73,6 +91,11 @@ class StorePartyBookingRequest extends FormRequest
                 'string',
                 Rule::in(array_column($programs, 'value')),
             ],
+            'program_choices' => [
+                'required',
+                'array:'.implode(',', $choiceGroupValues),
+            ],
+            'program_choices.*' => ['required', 'string'],
             'website' => ['nullable', 'max:0'],
         ];
     }
@@ -101,6 +124,56 @@ class StorePartyBookingRequest extends FormRequest
                     );
                 }
             },
+            function (Validator $validator): void {
+                /** @var list<array{
+                 *     value: string,
+                 *     choiceGroups: list<array{
+                 *         value: string,
+                 *         options: list<array{value: string}>
+                 *     }>
+                 * }> $programs
+                 */
+                $programs = config('party_bookings.programs');
+                $program = collect($programs)->firstWhere(
+                    'value',
+                    $this->string('program')->toString(),
+                );
+                $choices = $this->input('program_choices');
+
+                if ($program === null || ! is_array($choices)) {
+                    return;
+                }
+
+                $expectedChoiceGroups = array_column(
+                    $program['choiceGroups'],
+                    'value',
+                );
+                $unexpectedChoiceGroups = array_diff(
+                    array_keys($choices),
+                    $expectedChoiceGroups,
+                );
+
+                if ($unexpectedChoiceGroups !== []) {
+                    $validator->errors()->add(
+                        'program_choices',
+                        'As escolhas não pertencem ao programa selecionado.',
+                    );
+                }
+
+                foreach ($program['choiceGroups'] as $choiceGroup) {
+                    $choice = $choices[$choiceGroup['value']] ?? null;
+                    $isValidChoice = is_string($choice)
+                        && collect($choiceGroup['options'])
+                            ->contains('value', $choice);
+
+                    if (! $isValidChoice) {
+                        $validator->errors()->add(
+                            'program_choices.'.$choiceGroup['value'],
+                            'Escolhe uma opção válida para este grupo.',
+                        );
+                    }
+                }
+            },
         ];
     }
 
@@ -119,6 +192,7 @@ class StorePartyBookingRequest extends FormRequest
      *     party_time: string,
      *     guests: int,
      *     program: string,
+     *     program_choices: array<string, string>,
      *     website: string|null
      * }
      */
@@ -127,6 +201,14 @@ class StorePartyBookingRequest extends FormRequest
         $email = (string) $this->validated('email', '');
         $phone = (string) $this->validated('phone', '');
         $website = (string) $this->validated('website', '');
+        $validatedChoices = $this->validated('program_choices', []);
+        $programChoices = [];
+
+        if (is_array($validatedChoices)) {
+            foreach ($validatedChoices as $group => $choice) {
+                $programChoices[(string) $group] = (string) $choice;
+            }
+        }
 
         return [
             'contact_name' => (string) $this->validated('contact_name'),
@@ -142,6 +224,7 @@ class StorePartyBookingRequest extends FormRequest
             'party_time' => (string) $this->validated('party_time'),
             'guests' => (int) $this->validated('guests'),
             'program' => (string) $this->validated('program'),
+            'program_choices' => $programChoices,
             'website' => $website !== '' ? $website : null,
         ];
     }
@@ -167,6 +250,9 @@ class StorePartyBookingRequest extends FormRequest
             'party_time.in' => 'Escolhe um horário válido.',
             'guests.between' => 'O número de convidados deve estar entre 10 e 100.',
             'program.in' => 'Escolhe um programa válido.',
+            'program_choices.required' => 'Completa as escolhas do menu selecionado.',
+            'program_choices.array' => 'As escolhas do menu não são válidas.',
+            'program_choices.*.required' => 'Completa as escolhas do menu selecionado.',
             'website.max' => 'Não foi possível enviar o pedido.',
         ];
     }

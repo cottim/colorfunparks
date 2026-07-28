@@ -26,11 +26,13 @@ import type {
     PartyChildField,
     PartyBookingPayload,
     PartyDetailsField,
+    PartyProgramSelection,
 } from '@/components/book-party/types';
 import { store as storePartyBooking } from '@/routes/party-bookings';
 
 type BookPartyProps = {
     bookingOptions: BookingOptions;
+    initialProgramSelection?: PartyProgramSelection | null;
 };
 
 const bookingSteps: readonly BookingStep[] = [
@@ -41,16 +43,23 @@ const bookingSteps: readonly BookingStep[] = [
     'program',
 ];
 
-export function BookParty({ bookingOptions }: BookPartyProps) {
-    const [data, dispatch] = useReducer(
-        bookingReducer,
-        undefined,
-        createInitialBookingData,
+export function BookParty({
+    bookingOptions,
+    initialProgramSelection,
+}: BookPartyProps) {
+    const initialProgram =
+        bookingOptions.programs.find(
+            (program) =>
+                program.value === initialProgramSelection?.programValue,
+        ) ?? null;
+    const initialBookingData = createInitialBookingData(
+        initialProgram,
+        initialProgram ? (initialProgramSelection?.choices ?? {}) : {},
     );
+    const [data, dispatch] = useReducer(bookingReducer, initialBookingData);
     const [summaryData, summaryDispatch] = useReducer(
         bookingReducer,
-        undefined,
-        createInitialBookingData,
+        initialBookingData,
     );
     const [activeStep, setActiveStep] = useState<BookingStep | null>('contact');
     const [highestUnlockedStepIndex, setHighestUnlockedStepIndex] = useState(0);
@@ -62,7 +71,7 @@ export function BookParty({ bookingOptions }: BookPartyProps) {
     );
     const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
     const bookingForm = useForm<PartyBookingPayload>(
-        createPartyBookingPayload(createInitialBookingData()),
+        createPartyBookingPayload(initialBookingData),
     );
 
     const partyDateRange = createBookingDateRange(
@@ -151,7 +160,16 @@ export function BookParty({ bookingOptions }: BookPartyProps) {
                 },
             ],
             program: data.program
-                ? [{ type: 'program.selected', program: data.program }]
+                ? [
+                      { type: 'program.selected', program: data.program },
+                      ...Object.entries(data.programChoices).map(
+                          ([group, choice]): BookingAction => ({
+                              type: 'program.choice.selected',
+                              group,
+                              choice,
+                          }),
+                      ),
+                  ]
                 : [],
         };
 
@@ -377,9 +395,15 @@ export function BookParty({ bookingOptions }: BookPartyProps) {
                     <ProgramSection
                         programs={bookingOptions.programs}
                         selectedProgram={data.program}
+                        selectedChoices={data.programChoices}
                         error={
                             showStepErrors('program')
                                 ? errors.program
+                                : undefined
+                        }
+                        choiceError={
+                            showStepErrors('program')
+                                ? errors.programChoices
                                 : undefined
                         }
                         onSelect={(program) => {
@@ -391,6 +415,16 @@ export function BookParty({ bookingOptions }: BookPartyProps) {
                                 type: 'program.selected',
                                 program,
                             });
+                        }}
+                        onChoiceSelect={(group, choice) => {
+                            const action: BookingAction = {
+                                type: 'program.choice.selected',
+                                group,
+                                choice,
+                            };
+
+                            changeBooking(action);
+                            summaryDispatch(action);
                         }}
                         workflow={sectionWorkflow('program', 'Rever pedido')}
                     />
@@ -465,6 +499,7 @@ function createPartyBookingPayload(
         party_time: data.partyTime,
         guests: data.guests,
         program: data.program?.value ?? '',
+        program_choices: data.programChoices,
         website,
     };
 }
@@ -489,6 +524,12 @@ function mapServerErrors(serverErrors: Record<string, string>): BookingErrors {
 
     return Object.entries(serverErrors).reduce<BookingErrors>(
         (mappedErrors, [field, message]) => {
+            if (field.startsWith('program_choices')) {
+                mappedErrors.programChoices = message;
+
+                return mappedErrors;
+            }
+
             const mappedField = fieldMap[field];
 
             if (mappedField) {
@@ -508,7 +549,9 @@ function bookingActionErrorFields(
         case 'park.selected':
             return ['park'];
         case 'program.selected':
-            return ['program'];
+            return ['program', 'program_choices'];
+        case 'program.choice.selected':
+            return ['program_choices'];
         case 'child.changed':
             return [action.field === 'name' ? 'child_name' : 'child_age'];
         case 'party.changed':

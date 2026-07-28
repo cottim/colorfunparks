@@ -13,8 +13,21 @@ use App\Http\Controllers\PartyBookingController;
 use App\Http\Controllers\RequestCustomerLoginLinkController;
 use App\Http\Controllers\StaffInvitationController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get(
+    '/',
+    fn () => Inertia::render('welcome', [
+        'partyPrograms' => config('party_bookings.programs'),
+        'sharedPartyProgramIncludes' => config(
+            'party_bookings.shared_program_includes',
+        ),
+        'partyProgramBadges' => config('party_bookings.program_badges'),
+        'partyProgramConditions' => config(
+            'party_bookings.program_conditions',
+        ),
+    ]),
+)->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::redirect('/register', '/login')->name('register');
@@ -79,8 +92,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::get('/', ManagementDashboardController::class)
                 ->name('index');
-            Route::get('/festas', ManagementPartyBookingController::class)
+            Route::get('/festas', [ManagementPartyBookingController::class, 'index'])
                 ->name('bookings.index');
+            Route::get(
+                '/festas/{partyBooking}',
+                [ManagementPartyBookingController::class, 'show'],
+            )->name('bookings.show');
             Route::get('/clientes', ManagementCustomerController::class)
                 ->name('customers.index');
             Route::get('/utilizadores', [InternalUserController::class, 'index'])

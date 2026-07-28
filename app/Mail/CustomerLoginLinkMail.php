@@ -9,28 +9,17 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\URL;
 
 class CustomerLoginLinkMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public readonly string $loginUrl;
-
     public readonly int $expirationMinutes;
 
-    public function __construct(string $plainTextToken)
+    public function __construct(public readonly string $loginUrl)
     {
         $this->expirationMinutes = (int) config(
             'customer_auth.login_link_expiration_minutes',
-        );
-        $this->loginUrl = URL::to(
-            URL::temporarySignedRoute(
-                'customer-login.authenticate',
-                now()->addMinutes($this->expirationMinutes),
-                ['token' => $plainTextToken],
-                absolute: false,
-            ),
         );
 
         $this->afterCommit();

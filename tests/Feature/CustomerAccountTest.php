@@ -139,6 +139,7 @@ test('customers can view the details of one of their bookings', function () {
             fn (Assert $page) => $page
                 ->component('account/booking')
                 ->where('booking.id', $booking->id)
+                ->where('booking.reference', $booking->reference())
                 ->where('booking.childName', 'Leonor')
                 ->where('booking.childAge', 8)
                 ->where('booking.contactPhone', '912 345 678')

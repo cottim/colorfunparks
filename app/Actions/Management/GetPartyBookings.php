@@ -3,24 +3,13 @@
 namespace App\Actions\Management;
 
 use App\Models\PartyBooking;
-use App\Models\User;
 
-/**
- * @phpstan-type ManagedPartyBooking array{
- *     id: int,
- *     status: array{value: string, label: string},
- *     customer: array{name: string, email: string},
- *     park: string,
- *     child: array{name: string, age: int},
- *     party_date: string,
- *     party_time: string,
- *     guests: int,
- *     program: string,
- *     created_at: string|null
- * }
- */
 class GetPartyBookings
 {
+    public function __construct(
+        private readonly PresentPartyBooking $presentPartyBooking,
+    ) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -38,8 +27,10 @@ class GetPartyBookings
                 'party_time',
                 'guests',
                 'program',
+                'program_choices',
                 'contact_name',
                 'contact_email',
+                'contact_phone',
                 'created_at',
             ])
             ->with('user:id,name,email')
@@ -47,46 +38,8 @@ class GetPartyBookings
             ->paginate(20)
             ->withQueryString()
             ->through(
-                fn (PartyBooking $partyBooking): array => $this->transformBooking(
-                    $partyBooking,
-                ),
+                $this->presentPartyBooking->handle(...),
             )
             ->toArray();
-    }
-
-    /**
-     * @return ManagedPartyBooking
-     */
-    private function transformBooking(PartyBooking $partyBooking): array
-    {
-        $customer = $partyBooking->getRelation('user');
-        $customerName = $customer instanceof User ? $customer->name : null;
-        $customerEmail = $customer instanceof User ? $customer->email : null;
-
-        return [
-            'id' => $partyBooking->id,
-            'status' => [
-                'value' => $partyBooking->status->value,
-                'label' => $partyBooking->status->label(),
-            ],
-            'customer' => [
-                'name' => $partyBooking->contact_name
-                    ?? $customerName
-                    ?? 'Sem nome',
-                'email' => $partyBooking->contact_email
-                    ?? $customerEmail
-                    ?? 'Sem email',
-            ],
-            'park' => $partyBooking->park,
-            'child' => [
-                'name' => $partyBooking->child_name,
-                'age' => $partyBooking->child_age,
-            ],
-            'party_date' => $partyBooking->party_date->toDateString(),
-            'party_time' => $partyBooking->party_time,
-            'guests' => $partyBooking->guests,
-            'program' => $partyBooking->program,
-            'created_at' => $partyBooking->created_at?->toISOString(),
-        ];
     }
 }

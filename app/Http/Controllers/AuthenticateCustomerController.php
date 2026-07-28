@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\RevokeUserSessions;
 use App\Actions\Customer\ClaimCustomerPartyBookings;
 use App\Actions\Customer\ConsumeCustomerLoginLink;
 use App\Models\User;
@@ -19,6 +20,7 @@ class AuthenticateCustomerController extends Controller
         string $token,
         ConsumeCustomerLoginLink $consumeCustomerLoginLink,
         ClaimCustomerPartyBookings $claimCustomerPartyBookings,
+        RevokeUserSessions $revokeUserSessions,
     ): RedirectResponse {
         $email = $consumeCustomerLoginLink->handle($token);
 
@@ -27,7 +29,7 @@ class AuthenticateCustomerController extends Controller
         $user = Cache::lock(
             'customer-account:'.hash('sha256', $email),
             10,
-        )->block(3, function () use ($email): User {
+        )->block(3, function () use ($email, $revokeUserSessions): User {
             $user = User::query()->firstOrCreate(
                 ['email' => $email],
                 [
@@ -39,6 +41,8 @@ class AuthenticateCustomerController extends Controller
             abort_unless($user->role === UserRole::Customer, 403);
 
             if ($user->email_verified_at === null) {
+                $revokeUserSessions->handle($user);
+
                 $user->forceFill([
                     'email_verified_at' => now(),
                 ])->save();
@@ -51,6 +55,7 @@ class AuthenticateCustomerController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+        $request->session()->passwordConfirmed();
 
         return redirect()->intended(route('account.index'));
     }

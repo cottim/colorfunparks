@@ -32,6 +32,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read NewsletterSubscription|null $newsletterSubscription
+ * @property-read PendingEmailChange|null $pendingEmailChange
  * @property-read Collection<int, PartyBooking> $partyBookings
  * @property-read Collection<int, StaffInvitation> $staffInvitations
  */
@@ -56,6 +57,14 @@ class User extends Authenticatable implements PasskeyUser
             'email',
             'email',
         );
+    }
+
+    /**
+     * @return HasOne<PendingEmailChange, $this>
+     */
+    public function pendingEmailChange(): HasOne
+    {
+        return $this->hasOne(PendingEmailChange::class);
     }
 
     /**

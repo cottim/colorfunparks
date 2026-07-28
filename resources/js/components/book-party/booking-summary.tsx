@@ -38,6 +38,16 @@ function BookingSummaryContent({ data }: { data: BookingData }) {
         parsedPartyDate && isValid(parsedPartyDate)
             ? format(parsedPartyDate, 'dd/MM/yyyy')
             : 'Por escolher';
+    const programChoices =
+        data.program?.choiceGroups.flatMap((group) => {
+            const selectedChoice = group.options.find(
+                (option) => option.value === data.programChoices[group.value],
+            );
+
+            return selectedChoice
+                ? [`${group.label}: ${selectedChoice.label}`]
+                : [];
+        }) ?? [];
 
     const rows = [
         ['Contacto', data.contact.name || 'Por preencher'],
@@ -48,6 +58,12 @@ function BookingSummaryContent({ data }: { data: BookingData }) {
         ['Hora', data.partyTime || 'Por escolher'],
         ['Convidados', data.guests || 'Por preencher'],
         ['Programa', data.program?.label ?? 'Por escolher'],
+        [
+            'Menu',
+            programChoices.length > 0
+                ? programChoices.join(' · ')
+                : 'Por escolher',
+        ],
     ];
 
     return (

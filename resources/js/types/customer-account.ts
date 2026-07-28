@@ -3,6 +3,7 @@ export type CustomerBookingStatus =
 
 export type CustomerBooking = {
     id: number;
+    reference: string;
     status: CustomerBookingStatus;
     statusLabel: string;
     park: string;
