@@ -57,6 +57,17 @@ test('the homepage receives the configurable party programs and badges', functio
         );
 });
 
+test('the mobile party program carousel keeps an inset and centers selected cards', function () {
+    $component = file_get_contents(
+        resource_path('js/components/home/party-programs-section.tsx'),
+    );
+
+    expect($component)
+        ->toContain('scroll-px-1', 'px-1', 'snap-center')
+        ->toContain("inline: 'center'")
+        ->toContain("behavior: reduceMotion ? 'auto' : 'smooth'");
+});
+
 test('the homepage shares the account state used by its customer access', function () {
     $this->get(route('home'))
         ->assertOk()

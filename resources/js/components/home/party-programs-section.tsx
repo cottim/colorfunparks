@@ -78,9 +78,19 @@ export function PartyProgramsSection({
         return null;
     }
 
-    function selectProgram(program: PartyProgram) {
+    function selectProgram(program: PartyProgram, card: HTMLButtonElement) {
         setSelectedProgramValue(program.value);
         setChoices({});
+
+        const carousel = card.parentElement;
+
+        if (carousel && carousel.scrollWidth > carousel.clientWidth) {
+            card.scrollIntoView({
+                behavior: reduceMotion ? 'auto' : 'smooth',
+                block: 'nearest',
+                inline: 'center',
+            });
+        }
     }
 
     function selectChoice(group: string, choice: string) {
@@ -150,7 +160,7 @@ export function PartyProgramsSection({
                 </div>
 
                 <div
-                    className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-3 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0"
+                    className="flex snap-x snap-mandatory scroll-px-1 gap-3 overflow-x-auto px-1 pt-3 pb-3 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0"
                     aria-label="Programas de festa"
                 >
                     {programs.map((program, index) => (
@@ -162,7 +172,7 @@ export function PartyProgramsSection({
                                 (badge) => badge.programValue === program.value,
                             )}
                             selected={selectedProgram.value === program.value}
-                            onSelect={() => selectProgram(program)}
+                            onSelect={(card) => selectProgram(program, card)}
                             index={index}
                             reduceMotion={reduceMotion}
                         />
@@ -398,7 +408,7 @@ function ProgramCard({
     sharedIncludes: string[];
     badge?: PartyProgramBadge;
     selected: boolean;
-    onSelect: () => void;
+    onSelect: (card: HTMLButtonElement) => void;
     index: number;
     reduceMotion: boolean | null;
 }) {
@@ -417,7 +427,7 @@ function ProgramCard({
         <motion.button
             type="button"
             aria-pressed={selected}
-            onClick={onSelect}
+            onClick={(event) => onSelect(event.currentTarget)}
             layout={!reduceMotion}
             initial={reduceMotion ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -443,7 +453,7 @@ function ProgramCard({
                 delay: reduceMotion ? 0 : index * 0.07,
             }}
             className={cn(
-                'relative flex h-full min-w-64 snap-start flex-col items-start gap-3 rounded-2xl border p-4 text-left shadow-sm transition-shadow hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:ring-offset-2 focus-visible:outline-none sm:min-w-0',
+                'relative flex h-full min-w-64 snap-center flex-col items-start gap-3 rounded-2xl border p-4 text-left shadow-sm transition-shadow hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:ring-offset-2 focus-visible:outline-none sm:min-w-0',
                 styles.card,
             )}
         >
