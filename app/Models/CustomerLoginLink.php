@@ -16,10 +16,21 @@ use Illuminate\Support\Carbon;
  * @property string $token_hash
  * @property Carbon $expires_at
  * @property Carbon|null $used_at
+ * @property Carbon|null $privacy_accepted_at
+ * @property Carbon|null $terms_accepted_at
+ * @property string|null $legal_consent_version
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['email', 'token_hash', 'expires_at', 'used_at'])]
+#[Fillable([
+    'email',
+    'token_hash',
+    'expires_at',
+    'used_at',
+    'privacy_accepted_at',
+    'terms_accepted_at',
+    'legal_consent_version',
+])]
 class CustomerLoginLink extends Model
 {
     /** @use HasFactory<CustomerLoginLinkFactory> */
@@ -45,6 +56,8 @@ class CustomerLoginLink extends Model
         return [
             'expires_at' => 'datetime',
             'used_at' => 'datetime',
+            'privacy_accepted_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
         ];
     }
 }

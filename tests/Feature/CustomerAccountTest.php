@@ -5,6 +5,32 @@ use App\Models\User;
 use App\PartyBookingStatus;
 use Inertia\Testing\AssertableInertia as Assert;
 
+test('the customer account layout has useful public and profile links', function () {
+    $layout = file_get_contents(
+        resource_path('js/layouts/customer-account-layout.tsx'),
+    );
+    $profile = file_get_contents(
+        resource_path('js/pages/account/profile.tsx'),
+    );
+
+    expect($layout)
+        ->toContain(
+            '<Link href={home()} aria-label="Voltar ao site">',
+        )
+        ->toContain(
+            'const customerName = props.auth.user.name.trim();',
+        )
+        ->toContain('Adicionar nome')
+        ->toContain('href={account.profile.edit()}')
+        ->not->toContain(
+            '<Link href={account.index()} aria-label="Ir para a conta">',
+        );
+
+    expect($profile)->not->toContain(
+        'o email de acesso não pode ser alterado',
+    );
+});
+
 test('guests are redirected to login from customer account pages', function (string $routeName) {
     $this->get(route($routeName))->assertRedirect(route('login'));
 })->with([
@@ -84,6 +110,42 @@ test('the customer overview has useful empty states', function () {
                 ->has('openBookings', 0)
                 ->has('recentBookings', 0),
         );
+});
+
+test('customers can update only their name from their account', function () {
+    $customer = User::factory()->create([
+        'name' => 'Nome Antigo',
+        'email' => 'cliente@example.com',
+    ]);
+
+    $this->actingAs($customer)
+        ->patch(route('account.profile.update'), [
+            'name' => 'Nome Atualizado',
+            'email' => 'adulterado@example.com',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('account.profile.edit'));
+
+    $customer->refresh();
+
+    expect($customer->name)
+        ->toBe('Nome Atualizado')
+        ->and($customer->email)
+        ->toBe('cliente@example.com');
+});
+
+test('a customer name is required', function () {
+    $customer = User::factory()->create([
+        'name' => 'Nome Original',
+    ]);
+
+    $this->actingAs($customer)
+        ->from(route('account.profile.edit'))
+        ->patch(route('account.profile.update'), ['name' => ''])
+        ->assertSessionHasErrors('name')
+        ->assertRedirect(route('account.profile.edit'));
+
+    expect($customer->fresh()->name)->toBe('Nome Original');
 });
 
 test('customers can browse a paginated history containing only their bookings', function () {

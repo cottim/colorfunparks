@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('customer_login_links', function (Blueprint $table) {
+            $table->timestamp('privacy_accepted_at')->nullable();
+            $table->timestamp('terms_accepted_at')->nullable();
+            $table->string('legal_consent_version')->nullable();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('customer_login_links', function (Blueprint $table) {
+            $table->dropColumn([
+                'privacy_accepted_at',
+                'terms_accepted_at',
+                'legal_consent_version',
+            ]);
+        });
+    }
+};

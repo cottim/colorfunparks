@@ -180,6 +180,8 @@ test('a pending email change prevents the email squatting exploit chain', functi
 
     $this->post(route('customer-login.request'), [
         'email' => 'victim@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])->assertRedirect();
 
     $loginMail = null;

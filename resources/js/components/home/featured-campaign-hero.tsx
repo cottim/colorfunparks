@@ -1,5 +1,9 @@
-import { ArrowDownIcon, SparklesIcon } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ArrowRightIcon, SparklesIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CtaButton } from '@/components/ui/cta-button';
+import { create as createColorCampRegistration } from '@/routes/color-camp-registrations';
+import { colorCamp } from '@/routes/services';
 
 export function FeaturedCampaignHero() {
     return (
@@ -43,16 +47,25 @@ export function FeaturedCampaignHero() {
                         )}
                     </div>
 
-                    <CtaButton
-                        asChild
-                        attention="shine"
-                        className="h-11 self-start px-5"
-                    >
-                        <a href="#programas">
-                            Conhecer os nossos programas
-                            <ArrowDownIcon />
-                        </a>
-                    </CtaButton>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <CtaButton
+                            asChild
+                            attention="shine"
+                            className="h-11 px-5"
+                        >
+                            <Link href={createColorCampRegistration()}>
+                                Inscrever já
+                                <ArrowRightIcon aria-hidden="true" />
+                            </Link>
+                        </CtaButton>
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="h-11 border-white/40 bg-white/10 px-5 text-white shadow-sm hover:bg-white/20 hover:text-white"
+                        >
+                            <Link href={colorCamp()}>Saber mais</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="relative min-h-96 bg-white/10 lg:min-h-160">

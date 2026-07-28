@@ -6,6 +6,46 @@ use App\Models\User;
 use App\NewsletterSubscriptionStatus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Inertia\Testing\AssertableInertia as Assert;
+
+test('the homepage hides the newsletter for authenticated confirmed subscribers', function () {
+    $guestResponse = $this->get(route('home'));
+
+    $guestResponse->assertOk()->assertInertia(
+        fn (Assert $page) => $page->where('showNewsletter', true),
+    );
+
+    $customer = User::factory()->create();
+    NewsletterSubscription::factory()->pending()->create([
+        'email' => $customer->email,
+    ]);
+
+    $this->actingAs($customer)
+        ->get(route('home'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page->where(
+                'showNewsletter',
+                true,
+            ),
+        );
+
+    $customer->newsletterSubscription()->update([
+        'status' => NewsletterSubscriptionStatus::Confirmed,
+        'confirmed_at' => now(),
+        'confirmation_token_hash' => null,
+    ]);
+
+    $this->actingAs($customer)
+        ->get(route('home'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page->where(
+                'showNewsletter',
+                false,
+            ),
+        );
+});
 
 test('a visitor receives an email to confirm a pending newsletter subscription', function () {
     Mail::fake();

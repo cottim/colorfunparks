@@ -3,10 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\NewsletterSubscriptionStatus;
+use App\Observers\UserObserver;
 use App\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +27,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property UserRole $role
  * @property Carbon|null $email_verified_at
+ * @property Carbon|null $privacy_accepted_at
+ * @property Carbon|null $terms_accepted_at
+ * @property string|null $legal_consent_version
  * @property string $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -33,15 +39,20 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read NewsletterSubscription|null $newsletterSubscription
  * @property-read PendingEmailChange|null $pendingEmailChange
+ * @property-read PlayCardMembership|null $playCardMembership
+ * @property-read Collection<int, ColorCampRegistration> $colorCampRegistrations
  * @property-read Collection<int, PartyBooking> $partyBookings
  * @property-read Collection<int, StaffInvitation> $staffInvitations
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    public const string LEGAL_CONSENT_VERSION = 'v1';
 
     protected $attributes = [
         'role' => UserRole::Customer->value,
@@ -68,11 +79,27 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * @return HasOne<PlayCardMembership, $this>
+     */
+    public function playCardMembership(): HasOne
+    {
+        return $this->hasOne(PlayCardMembership::class);
+    }
+
+    /**
      * @return HasMany<PartyBooking, $this>
      */
     public function partyBookings(): HasMany
     {
         return $this->hasMany(PartyBooking::class);
+    }
+
+    /**
+     * @return HasMany<ColorCampRegistration, $this>
+     */
+    public function colorCampRegistrations(): HasMany
+    {
+        return $this->hasMany(ColorCampRegistration::class);
     }
 
     /**
@@ -88,6 +115,21 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role->canAccessManagement();
     }
 
+    public function hasAcceptedCurrentLegalConsent(): bool
+    {
+        return $this->privacy_accepted_at !== null
+            && $this->terms_accepted_at !== null
+            && $this->legal_consent_version === self::LEGAL_CONSENT_VERSION;
+    }
+
+    public function hasAuthorizedMarketing(): bool
+    {
+        return $this->newsletterSubscription()
+            ->where('status', NewsletterSubscriptionStatus::Confirmed)
+            ->whereNull('unsubscribed_at')
+            ->exists();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -97,6 +139,8 @@ class User extends Authenticatable implements PasskeyUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'privacy_accepted_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',

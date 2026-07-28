@@ -22,6 +22,7 @@ import { ProgramSection } from '@/components/book-party/program-section';
 import type {
     BookingStep,
     BookingOptions,
+    AuthenticatedCustomer,
     ContactField,
     PartyChildField,
     PartyBookingPayload,
@@ -33,6 +34,7 @@ import { store as storePartyBooking } from '@/routes/party-bookings';
 type BookPartyProps = {
     bookingOptions: BookingOptions;
     initialProgramSelection?: PartyProgramSelection | null;
+    authenticatedCustomer?: AuthenticatedCustomer | null;
 };
 
 const bookingSteps: readonly BookingStep[] = [
@@ -46,6 +48,7 @@ const bookingSteps: readonly BookingStep[] = [
 export function BookParty({
     bookingOptions,
     initialProgramSelection,
+    authenticatedCustomer = null,
 }: BookPartyProps) {
     const initialProgram =
         bookingOptions.programs.find(
@@ -55,6 +58,7 @@ export function BookParty({
     const initialBookingData = createInitialBookingData(
         initialProgram,
         initialProgram ? (initialProgramSelection?.choices ?? {}) : {},
+        authenticatedCustomer,
     );
     const [data, dispatch] = useReducer(bookingReducer, initialBookingData);
     const [summaryData, summaryDispatch] = useReducer(
@@ -341,6 +345,7 @@ export function BookParty({
                 <form onSubmit={submit} noValidate className="grid gap-5">
                     <ContactSection
                         data={data}
+                        authenticatedCustomer={authenticatedCustomer}
                         errors={errors}
                         showErrors={showStepErrors('contact')}
                         dispatch={changeBooking}

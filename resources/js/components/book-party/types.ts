@@ -74,6 +74,17 @@ export type ContactDetails = {
     marketingAccepted: boolean;
 };
 
+export type AuthenticatedCustomer = {
+    name: string;
+    email: string;
+    hasAcceptedLegalConsent: boolean;
+    marketing: {
+        status: 'not-authorized' | 'pending' | 'authorized';
+        label: string;
+        isAuthorized: boolean;
+    };
+};
+
 export type BookingData = {
     contact: ContactDetails;
     park: Park | null;

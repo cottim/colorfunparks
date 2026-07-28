@@ -11,13 +11,15 @@ use Illuminate\Support\Str;
 
 class SubscribeToNewsletter
 {
-    public function handle(string $email): NewsletterSubscription
-    {
+    public function handle(
+        string $email,
+        string $source = NewsletterSubscription::HOMEPAGE_SOURCE,
+    ): NewsletterSubscription {
         $lockName = 'newsletter-subscription:'.hash('sha256', $email);
 
         return Cache::lock($lockName, 10)->block(
             3,
-            function () use ($email): NewsletterSubscription {
+            function () use ($email, $source): NewsletterSubscription {
                 $subscription = NewsletterSubscription::query()
                     ->firstOrNew(['email' => $email]);
 
@@ -34,7 +36,7 @@ class SubscribeToNewsletter
                     'consented_at' => now(),
                     'unsubscribed_at' => null,
                     'consent_version' => NewsletterSubscription::CONSENT_VERSION,
-                    'source' => NewsletterSubscription::HOMEPAGE_SOURCE,
+                    'source' => $source,
                 ]);
 
                 $resendAvailableAt = $subscription->confirmation_sent_at?->addMinutes(

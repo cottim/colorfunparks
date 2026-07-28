@@ -5,6 +5,7 @@ import {
     LogOutIcon,
     MailCheckIcon,
     PartyPopperIcon,
+    SunIcon,
     UserRoundIcon,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
@@ -12,7 +13,7 @@ import AnimatedColorFunParksLogo from '@/components/animated-color-fun-parks-log
 import { PublicFooter } from '@/components/public-footer';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { logout } from '@/routes';
+import { home, logout } from '@/routes';
 import account from '@/routes/account';
 import { create as createPartyBooking } from '@/routes/party-bookings';
 
@@ -40,6 +41,14 @@ const navigationItems: AccountNavigationItem[] = [
         isActive: (path) => path.startsWith(account.bookings.index.url()),
     },
     {
+        label: 'Color Camp',
+        shortLabel: 'Camp',
+        href: account.colorCampRegistrations.index(),
+        icon: SunIcon,
+        isActive: (path) =>
+            path.startsWith(account.colorCampRegistrations.index.url()),
+    },
+    {
         label: 'Dados pessoais',
         shortLabel: 'Perfil',
         href: account.profile.edit(),
@@ -62,12 +71,13 @@ export default function CustomerAccountLayout({
 }) {
     const { url, props } = usePage();
     const currentPath = url.split('?')[0];
+    const customerName = props.auth.user.name.trim();
 
     return (
         <div className="flex min-h-svh flex-col bg-[#fffdf0] text-gray-900">
             <header className="border-b border-black/10 bg-linear-to-r from-[#FFFE00] to-[#FFCD00]">
                 <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                    <Link href={account.index()} aria-label="Ir para a conta">
+                    <Link href={home()} aria-label="Voltar ao site">
                         <AnimatedColorFunParksLogo className="w-full max-w-48 overflow-visible sm:max-w-3xs" />
                     </Link>
 
@@ -90,9 +100,18 @@ export default function CustomerAccountLayout({
             <div className="mx-auto grid w-full max-w-7xl flex-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
                 <aside className="hidden border-r border-black/10 bg-white/45 px-5 py-8 lg:block">
                     <div className="sticky top-8">
-                        <p className="truncate text-sm font-semibold text-[#376b50]">
-                            {props.auth.user.email}
-                        </p>
+                        {customerName ? (
+                            <p className="truncate text-sm font-semibold text-[#376b50]">
+                                {customerName}
+                            </p>
+                        ) : (
+                            <Link
+                                href={account.profile.edit()}
+                                className="inline-flex rounded-md text-sm font-semibold text-[#376b50] underline underline-offset-4 hover:text-[#28583f] focus-visible:ring-2 focus-visible:ring-[#376b50] focus-visible:outline-none"
+                            >
+                                Adicionar nome
+                            </Link>
+                        )}
 
                         <nav
                             aria-label="Área de cliente"
@@ -128,7 +147,7 @@ export default function CustomerAccountLayout({
 
             <nav
                 aria-label="Área de cliente"
-                className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-black/10 bg-white/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden"
+                className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-black/10 bg-white/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden"
             >
                 {navigationItems.map((item) => (
                     <AccountNavigationLink

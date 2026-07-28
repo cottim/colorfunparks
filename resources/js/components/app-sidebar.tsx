@@ -3,6 +3,7 @@ import {
     CakeSliceIcon,
     ContactRoundIcon,
     HouseIcon,
+    SunIcon,
     UserCogIcon,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { index as managementIndex } from '@/routes/management';
 import { index as bookingsIndex } from '@/routes/management/bookings';
+import { index as colorCampRegistrationsIndex } from '@/routes/management/color-camp-registrations';
 import { index as customersIndex } from '@/routes/management/customers';
 import { index as usersIndex } from '@/routes/management/users';
 import type { NavItem } from '@/types';
@@ -36,6 +38,11 @@ export function AppSidebar() {
             title: 'Festas',
             href: bookingsIndex(),
             icon: CakeSliceIcon,
+        },
+        {
+            title: 'Color Camp',
+            href: colorCampRegistrationsIndex(),
+            icon: SunIcon,
         },
         {
             title: 'Clientes',

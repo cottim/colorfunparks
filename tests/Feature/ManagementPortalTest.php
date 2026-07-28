@@ -16,6 +16,7 @@ test('management pages require an internal account', function (string $route) {
 })->with([
     'dashboard' => 'management.index',
     'bookings' => 'management.bookings.index',
+    'color camp' => 'management.color-camp-registrations.index',
     'customers' => 'management.customers.index',
     'users' => 'management.users.index',
 ]);
@@ -29,6 +30,7 @@ test('customers cannot access management pages', function (string $route) {
 })->with([
     'dashboard' => 'management.index',
     'bookings' => 'management.bookings.index',
+    'color camp' => 'management.color-camp-registrations.index',
     'customers' => 'management.customers.index',
     'users' => 'management.users.index',
 ]);
@@ -41,6 +43,9 @@ test('staff can access operational pages but not user management', function () {
         ->assertOk();
     $this->actingAs($staff)
         ->get(route('management.bookings.index'))
+        ->assertOk();
+    $this->actingAs($staff)
+        ->get(route('management.color-camp-registrations.index'))
         ->assertOk();
     $this->actingAs($staff)
         ->get(route('management.customers.index'))

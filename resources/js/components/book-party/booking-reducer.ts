@@ -1,6 +1,7 @@
 import { createPartyChild } from '@/components/book-party/party-child';
 import type {
     BookingData,
+    AuthenticatedCustomer,
     ContactField,
     Park,
     PartyChildField,
@@ -45,15 +46,19 @@ function assertNever(action: never): never {
 export function createInitialBookingData(
     program: PartyProgram | null = null,
     programChoices: Record<string, string> = {},
+    authenticatedCustomer: AuthenticatedCustomer | null = null,
 ): BookingData {
     return {
         contact: {
-            name: '',
-            email: '',
+            name: authenticatedCustomer?.name ?? '',
+            email: authenticatedCustomer?.email ?? '',
             phone: '',
-            privacyAccepted: false,
-            termsAccepted: false,
-            marketingAccepted: false,
+            privacyAccepted:
+                authenticatedCustomer?.hasAcceptedLegalConsent ?? false,
+            termsAccepted:
+                authenticatedCustomer?.hasAcceptedLegalConsent ?? false,
+            marketingAccepted:
+                authenticatedCustomer?.marketing.isAuthorized ?? false,
         },
         park: null,
         child: createPartyChild(),

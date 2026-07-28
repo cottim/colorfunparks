@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Auth\RevokeUserSessions;
+use App\Actions\Customer\ClaimCustomerColorCampRegistrations;
 use App\Actions\Customer\ClaimCustomerPartyBookings;
 use App\Actions\Customer\ConsumeCustomerLoginLink;
+use App\Actions\Customer\RecordCustomerLegalConsent;
 use App\Models\User;
 use App\UserRole;
 use Illuminate\Http\RedirectResponse;
@@ -20,20 +22,26 @@ class AuthenticateCustomerController extends Controller
         string $token,
         ConsumeCustomerLoginLink $consumeCustomerLoginLink,
         ClaimCustomerPartyBookings $claimCustomerPartyBookings,
+        ClaimCustomerColorCampRegistrations $claimCustomerColorCampRegistrations,
         RevokeUserSessions $revokeUserSessions,
+        RecordCustomerLegalConsent $recordCustomerLegalConsent,
     ): RedirectResponse {
-        $email = $consumeCustomerLoginLink->handle($token);
+        $loginLink = $consumeCustomerLoginLink->handle($token);
 
-        abort_unless($email !== null, 403);
+        abort_unless($loginLink !== null, 403);
 
         $user = Cache::lock(
-            'customer-account:'.hash('sha256', $email),
+            'customer-account:'.hash('sha256', $loginLink->email),
             10,
-        )->block(3, function () use ($email, $revokeUserSessions): User {
+        )->block(3, function () use (
+            $loginLink,
+            $revokeUserSessions,
+            $recordCustomerLegalConsent,
+        ): User {
             $user = User::query()->firstOrCreate(
-                ['email' => $email],
+                ['email' => $loginLink->email],
                 [
-                    'name' => $email,
+                    'name' => $loginLink->email,
                     'password' => Str::random(64),
                 ],
             );
@@ -48,10 +56,26 @@ class AuthenticateCustomerController extends Controller
                 ])->save();
             }
 
+            if (
+                ! $user->hasAcceptedCurrentLegalConsent()
+                &&
+                $loginLink->privacy_accepted_at !== null
+                && $loginLink->terms_accepted_at !== null
+                && $loginLink->legal_consent_version !== null
+            ) {
+                $recordCustomerLegalConsent->handle(
+                    $user,
+                    $loginLink->privacy_accepted_at,
+                    $loginLink->terms_accepted_at,
+                    $loginLink->legal_consent_version,
+                );
+            }
+
             return $user;
         });
 
         $claimCustomerPartyBookings->handle($user);
+        $claimCustomerColorCampRegistrations->handle($user);
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();

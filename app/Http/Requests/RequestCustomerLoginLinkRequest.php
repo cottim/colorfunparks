@@ -31,6 +31,8 @@ class RequestCustomerLoginLinkRequest extends FormRequest
                 Rule::email()->rfcCompliant(),
                 'max:255',
             ],
+            'privacy_accepted' => ['required', 'accepted'],
+            'terms_accepted' => ['required', 'accepted'],
         ];
     }
 
@@ -42,6 +44,8 @@ class RequestCustomerLoginLinkRequest extends FormRequest
         return [
             'email.required' => 'Indica o teu endereço de email.',
             'email.email' => 'Indica um endereço de email válido.',
+            'privacy_accepted.accepted' => 'É necessário aceitar a Política de Privacidade.',
+            'terms_accepted.accepted' => 'É necessário aceitar os Termos e Condições.',
         ];
     }
 

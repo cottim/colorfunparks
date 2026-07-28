@@ -61,6 +61,15 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function withLegalConsent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'privacy_accepted_at' => now(),
+            'terms_accepted_at' => now(),
+            'legal_consent_version' => User::LEGAL_CONSENT_VERSION,
+        ]);
+    }
+
     /**
      * Indicate that the model has two-factor authentication configured.
      */

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Customer\GetCustomerPreferences;
+use App\Actions\Customer\RecordCustomerLegalConsent;
 use App\Actions\Newsletter\SubscribeToNewsletter;
 use App\Actions\PartyBooking\CreatePartyBooking;
 use App\Actions\PartyBooking\GetInitialPartyProgramSelection;
 use App\Http\Requests\StorePartyBookingRequest;
+use App\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,10 +19,26 @@ class PartyBookingController extends Controller
     public function create(
         Request $request,
         GetInitialPartyProgramSelection $getInitialPartyProgramSelection,
+        GetCustomerPreferences $getCustomerPreferences,
     ): Response {
         $queryChoices = $request->query('choices', []);
+        $customer = $request->user()?->role === UserRole::Customer
+            ? $request->user()
+            : null;
+        $preferences = $customer !== null
+            ? $getCustomerPreferences->handle($customer)
+            : null;
 
         return Inertia::render('party-bookings/create', [
+            'authenticatedCustomer' => $customer !== null
+                ? [
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'hasAcceptedLegalConsent' => $customer
+                        ->hasAcceptedCurrentLegalConsent(),
+                    'marketing' => $preferences['marketing'],
+                ]
+                : null,
             'bookingOptions' => [
                 'maxBookingMonthsAhead' => (int) config(
                     'party_bookings.max_months_ahead',
@@ -39,11 +58,27 @@ class PartyBookingController extends Controller
         StorePartyBookingRequest $request,
         CreatePartyBooking $createPartyBooking,
         SubscribeToNewsletter $subscribeToNewsletter,
+        RecordCustomerLegalConsent $recordCustomerLegalConsent,
     ): RedirectResponse {
         $data = $request->partyBookingData();
+
+        if (
+            $request->authenticatedCustomer() !== null
+            && ! $request->authenticatedCustomer()
+                ->hasAcceptedCurrentLegalConsent()
+        ) {
+            $recordCustomerLegalConsent->handle(
+                $request->authenticatedCustomer(),
+            );
+        }
+
         $booking = $createPartyBooking->handle($request->user(), $data);
 
-        if ($data['marketing_accepted'] && $data['email']) {
+        if (
+            $request->authenticatedCustomer() === null
+            && $data['marketing_accepted']
+            && $data['email']
+        ) {
             defer(
                 fn () => $subscribeToNewsletter->handle($data['email']),
             );

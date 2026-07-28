@@ -62,9 +62,12 @@ export function StatusBadge({ status }: { status: Status }) {
                     status.value === 'confirmed' ||
                     status.value === 'admin'
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                    : status.value === 'pending'
+                    : status.value === 'pending' ||
+                        status.value === 'waitlisted'
                       ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                      : status.value === 'staff' || status.value === 'contacted'
+                      : status.value === 'staff' ||
+                          status.value === 'contacted' ||
+                          status.value === 'reviewing'
                         ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200'
                         : 'bg-muted text-muted-foreground',
             )}

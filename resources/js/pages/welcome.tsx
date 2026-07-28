@@ -4,11 +4,13 @@ import type {
     PartyProgram,
     PartyProgramBadge,
 } from '@/components/book-party/types';
+import { BlogSection } from '@/components/home/blog-section';
+import { CustomerFeedbackSection } from '@/components/home/customer-feedback-section';
 import { FeaturedCampaignHero } from '@/components/home/featured-campaign-hero';
-import { HourlyPlaySection } from '@/components/home/hourly-play-section';
 import { NewsletterSection } from '@/components/home/newsletter-section';
 import { ParkGallerySection } from '@/components/home/park-gallery-section';
 import { PartyProgramsSection } from '@/components/home/party-programs-section';
+import { ServicesSection } from '@/components/home/services-section';
 import { PublicFooter } from '@/components/public-footer';
 import { PublicHeader } from '@/components/public-header';
 import { CtaButton } from '@/components/ui/cta-button';
@@ -19,11 +21,13 @@ export default function Welcome({
     sharedPartyProgramIncludes,
     partyProgramBadges,
     partyProgramConditions,
+    showNewsletter,
 }: {
     partyPrograms: PartyProgram[];
     sharedPartyProgramIncludes: string[];
     partyProgramBadges: PartyProgramBadge[];
     partyProgramConditions: string[];
+    showNewsletter: boolean;
 }) {
     return (
         <>
@@ -49,9 +53,11 @@ export default function Welcome({
                         badges={partyProgramBadges}
                         conditions={partyProgramConditions}
                     />
-                    <HourlyPlaySection />
+                    <ServicesSection />
                     <ParkGallerySection />
-                    <NewsletterSection />
+                    <CustomerFeedbackSection />
+                    <BlogSection />
+                    {showNewsletter && <NewsletterSection />}
                 </main>
 
                 <PublicFooter className="mt-auto" />

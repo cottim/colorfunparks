@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\DB;
 
 class ConsumeCustomerLoginLink
 {
-    public function handle(string $plainTextToken): ?string
+    public function handle(string $plainTextToken): ?CustomerLoginLink
     {
-        return DB::transaction(function () use ($plainTextToken): ?string {
+        return DB::transaction(function () use ($plainTextToken): ?CustomerLoginLink {
             $loginLink = CustomerLoginLink::query()
                 ->where(
                     'token_hash',
@@ -26,7 +26,7 @@ class ConsumeCustomerLoginLink
 
             $loginLink->update(['used_at' => now()]);
 
-            return $loginLink->email;
+            return $loginLink;
         });
     }
 }

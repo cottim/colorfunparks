@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { BookParty } from '@/components/book-party/book-party';
 import type {
     BookingOptions,
+    AuthenticatedCustomer,
     PartyProgramSelection,
 } from '@/components/book-party/types';
 import { PublicFooter } from '@/components/public-footer';
@@ -13,9 +14,11 @@ import { home } from '@/routes';
 export default function CreatePartyBooking({
     bookingOptions,
     initialProgramSelection,
+    authenticatedCustomer,
 }: {
     bookingOptions: BookingOptions;
     initialProgramSelection: PartyProgramSelection | null;
+    authenticatedCustomer: AuthenticatedCustomer | null;
 }) {
     return (
         <>
@@ -56,6 +59,7 @@ export default function CreatePartyBooking({
                         <BookParty
                             bookingOptions={bookingOptions}
                             initialProgramSelection={initialProgramSelection}
+                            authenticatedCustomer={authenticatedCustomer}
                         />
                     </div>
                 </main>

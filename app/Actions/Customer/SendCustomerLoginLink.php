@@ -13,7 +13,10 @@ class SendCustomerLoginLink
 
     public function handle(string $email): void
     {
-        $loginUrl = $this->issueCustomerLoginLink->handle($email);
+        $loginUrl = $this->issueCustomerLoginLink->handle(
+            $email,
+            recordsLegalConsent: true,
+        );
 
         if ($loginUrl === null) {
             return;

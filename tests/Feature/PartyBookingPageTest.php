@@ -1,6 +1,7 @@
 <?php
 
 use App\Mail\ConfirmNewsletterSubscriptionMail;
+use App\Models\NewsletterSubscription;
 use App\Models\PartyBooking;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -160,11 +161,39 @@ test('guests can submit a party booking without attaching it to an account', fun
 });
 
 test('authenticated customers are redirected to the newly created booking', function () {
-    $customer = User::factory()->create();
+    $customer = User::factory()->withLegalConsent()->create([
+        'name' => 'Cliente Real',
+        'email' => 'real@example.com',
+    ]);
+
+    $this->actingAs($customer)
+        ->get(route('party-bookings.create'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page->where(
+                'authenticatedCustomer',
+                [
+                    'name' => 'Cliente Real',
+                    'email' => 'real@example.com',
+                    'hasAcceptedLegalConsent' => true,
+                    'marketing' => [
+                        'status' => 'not-authorized',
+                        'label' => 'Não autorizado',
+                        'isAuthorized' => false,
+                    ],
+                ],
+            ),
+        );
 
     $response = $this->actingAs($customer)->post(
         route('party-bookings.store'),
-        validPartyBookingPayload(),
+        validPartyBookingPayload([
+            'contact_name' => 'Nome adulterado',
+            'email' => 'adulterado@example.com',
+            'privacy_accepted' => false,
+            'terms_accepted' => false,
+            'marketing_accepted' => true,
+        ]),
     );
 
     $booking = PartyBooking::query()->sole();
@@ -173,7 +202,71 @@ test('authenticated customers are redirected to the newly created booking', func
         route('account.bookings.show', $booking),
     );
 
-    expect($booking->user_id)->toBe($customer->id);
+    expect($booking->user_id)
+        ->toBe($customer->id)
+        ->and($booking->contact_name)
+        ->toBe('Cliente Real')
+        ->and($booking->contact_email)
+        ->toBe('real@example.com')
+        ->and(NewsletterSubscription::query()->count())
+        ->toBe(0);
+});
+
+test('authenticated customers do not need to submit name or email', function () {
+    $customer = User::factory()->create([
+        'name' => 'Cliente Real',
+        'email' => 'real@example.com',
+    ]);
+
+    $this->actingAs($customer)
+        ->post(
+            route('party-bookings.store'),
+            validPartyBookingPayload([
+                'contact_name' => '',
+                'email' => '',
+                'phone' => '',
+            ]),
+        )
+        ->assertRedirect();
+
+    $booking = PartyBooking::query()->sole();
+
+    expect($booking->contact_name)
+        ->toBe('Cliente Real')
+        ->and($booking->contact_email)
+        ->toBe('real@example.com')
+        ->and($customer->refresh()->hasAcceptedCurrentLegalConsent())
+        ->toBeTrue();
+});
+
+test('authenticated customers with account consent may omit booking consent fields', function () {
+    $customer = User::factory()->withLegalConsent()->create();
+    $payload = validPartyBookingPayload();
+    unset(
+        $payload['privacy_accepted'],
+        $payload['terms_accepted'],
+        $payload['marketing_accepted'],
+    );
+
+    $this->actingAs($customer)
+        ->post(route('party-bookings.store'), $payload)
+        ->assertRedirect();
+
+    expect(PartyBooking::query()->count())->toBe(1);
+});
+
+test('customers can leave the booking flow to use another account', function () {
+    $customer = User::factory()->create();
+
+    $this->actingAs($customer)
+        ->post(route('party-bookings.customer-session.destroy'))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas(
+            'url.intended',
+            route('party-bookings.create'),
+        );
+
+    $this->assertGuest();
 });
 
 test('a phone only party booking remains valid', function () {

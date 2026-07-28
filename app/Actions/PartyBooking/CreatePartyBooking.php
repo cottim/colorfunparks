@@ -46,8 +46,12 @@ class CreatePartyBooking
                 $data['program'],
                 $data['program_choices'],
             ),
-            'contact_name' => $data['contact_name'],
-            'contact_email' => $data['email'] ?: null,
+            'contact_name' => $customer !== null
+                ? $customer->name
+                : $data['contact_name'],
+            'contact_email' => $customer !== null
+                ? $customer->email
+                : ($data['email'] ?: null),
             'contact_phone' => $data['phone'] ?: null,
             'privacy_accepted_at' => now(),
             'terms_accepted_at' => now(),

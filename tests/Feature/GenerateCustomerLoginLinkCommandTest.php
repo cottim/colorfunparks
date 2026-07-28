@@ -49,6 +49,7 @@ test('a local login link authenticates a customer without sending email', functi
     $customer = User::query()->sole();
 
     $this->assertAuthenticatedAs($customer);
+    expect($customer->hasAcceptedCurrentLegalConsent())->toBeFalse();
     Mail::assertNothingQueued();
 });
 

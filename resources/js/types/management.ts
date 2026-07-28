@@ -74,3 +74,32 @@ export type StaffInvitation = {
     expires_at: string;
     created_at: string | null;
 };
+
+export type ManagedColorCampRegistration = {
+    id: number;
+    reference: string;
+    status: Status;
+    statusLabel: string;
+    childName: string;
+    childBirthDate: string;
+    attendanceType: string;
+    attendanceLabel: string;
+    selectedPeriods: string[];
+    lunchOption: string;
+    discount: string | null;
+    needsExtendedCare: boolean;
+    tripAuthorized: boolean;
+    photoConsent: string;
+    allergiesAndHealthNotes: string | null;
+    authorizedPickupName: string;
+    authorizedPickupPhone: string;
+    contactPhone: string;
+    notes: string | null;
+    createdAt: string;
+    customer: {
+        name: string;
+        email: string;
+        phone: string;
+    };
+    statusOptions: Status[];
+};

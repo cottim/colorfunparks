@@ -4,12 +4,18 @@ import type { BookingAction } from '@/components/book-party/booking-reducer';
 import { BookingSection } from '@/components/book-party/booking-section';
 import type { BookingSectionWorkflow } from '@/components/book-party/booking-section';
 import type { BookingErrors } from '@/components/book-party/booking-validation';
-import type { BookingData, ContactField } from '@/components/book-party/types';
+import type {
+    AuthenticatedCustomer,
+    BookingData,
+    ContactField,
+} from '@/components/book-party/types';
 import InputError from '@/components/input-error';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { edit as editPreferences } from '@/routes/account/preferences';
 import { privacyPolicy, termsAndConditions } from '@/routes/legal';
+import { destroy as switchCustomerAccount } from '@/routes/party-bookings/customer-session';
 
 type ContactSectionProps = {
     data: BookingData;
@@ -18,6 +24,7 @@ type ContactSectionProps = {
     dispatch: Dispatch<BookingAction>;
     workflow: BookingSectionWorkflow;
     onFieldBlur: (field: ContactField, value: string | boolean) => void;
+    authenticatedCustomer: AuthenticatedCustomer | null;
 };
 
 export function ContactSection({
@@ -27,6 +34,7 @@ export function ContactSection({
     dispatch,
     workflow,
     onFieldBlur,
+    authenticatedCustomer,
 }: ContactSectionProps) {
     function changeContact(field: ContactField, value: string | boolean) {
         dispatch({
@@ -44,55 +52,88 @@ export function ContactSection({
             workflow={workflow}
         >
             <div className="grid gap-5 sm:grid-cols-2">
-                <Field className="sm:col-span-2">
-                    <Label htmlFor="booking-contact-name">Nome</Label>
-                    <Input
-                        id="booking-contact-name"
-                        name="contact_name"
-                        value={data.contact.name}
-                        onChange={(event) =>
-                            changeContact('name', event.target.value)
-                        }
-                        onBlur={(event) =>
-                            onFieldBlur('name', event.target.value)
-                        }
-                        autoComplete="name"
-                        required
-                        aria-invalid={showErrors && Boolean(errors.contactName)}
-                    />
-                    <InputError
-                        message={showErrors ? errors.contactName : undefined}
-                    />
-                </Field>
+                {authenticatedCustomer ? (
+                    <div className="rounded-xl border border-[#558b6e]/30 bg-[#558b6e]/10 p-4 sm:col-span-2">
+                        <p className="font-semibold">
+                            Pedido associado à tua conta
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                            {authenticatedCustomer.name} ·{' '}
+                            {authenticatedCustomer.email}
+                        </p>
+                        <p className="mt-3 text-sm text-gray-600">
+                            Não és tu?{' '}
+                            <Link
+                                href={switchCustomerAccount()}
+                                method="post"
+                                as="button"
+                                className="font-semibold text-[#376b50] underline underline-offset-4"
+                            >
+                                Usar outra conta
+                            </Link>
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <Field className="sm:col-span-2">
+                            <Label htmlFor="booking-contact-name">Nome</Label>
+                            <Input
+                                id="booking-contact-name"
+                                name="contact_name"
+                                value={data.contact.name}
+                                onChange={(event) =>
+                                    changeContact('name', event.target.value)
+                                }
+                                onBlur={(event) =>
+                                    onFieldBlur('name', event.target.value)
+                                }
+                                autoComplete="name"
+                                required
+                                aria-invalid={
+                                    showErrors && Boolean(errors.contactName)
+                                }
+                            />
+                            <InputError
+                                message={
+                                    showErrors ? errors.contactName : undefined
+                                }
+                            />
+                        </Field>
 
-                <Field>
-                    <Label htmlFor="booking-contact-email">
-                        Email{' '}
-                        <span className="text-gray-500">(preferencial)</span>
-                    </Label>
-                    <Input
-                        id="booking-contact-email"
-                        name="email"
-                        type="email"
-                        value={data.contact.email}
-                        onChange={(event) =>
-                            changeContact('email', event.target.value)
-                        }
-                        onBlur={(event) =>
-                            onFieldBlur('email', event.target.value)
-                        }
-                        autoComplete="email"
-                        inputMode="email"
-                        placeholder="nome@exemplo.pt"
-                        aria-invalid={
-                            showErrors &&
-                            Boolean(errors.email || errors.contactMethod)
-                        }
-                    />
-                    <InputError
-                        message={showErrors ? errors.email : undefined}
-                    />
-                </Field>
+                        <Field>
+                            <Label htmlFor="booking-contact-email">
+                                Email{' '}
+                                <span className="text-gray-500">
+                                    (preferencial)
+                                </span>
+                            </Label>
+                            <Input
+                                id="booking-contact-email"
+                                name="email"
+                                type="email"
+                                value={data.contact.email}
+                                onChange={(event) =>
+                                    changeContact('email', event.target.value)
+                                }
+                                onBlur={(event) =>
+                                    onFieldBlur('email', event.target.value)
+                                }
+                                autoComplete="email"
+                                inputMode="email"
+                                placeholder="nome@exemplo.pt"
+                                aria-invalid={
+                                    showErrors &&
+                                    Boolean(
+                                        errors.email || errors.contactMethod,
+                                    )
+                                }
+                            />
+                            <InputError
+                                message={showErrors ? errors.email : undefined}
+                            />
+                        </Field>
+                    </>
+                )}
 
                 <Field>
                     <Label htmlFor="booking-contact-phone">Telefone</Label>
@@ -121,65 +162,118 @@ export function ContactSection({
                 </Field>
             </div>
 
-            <p className="mt-3 text-sm text-gray-500">
-                Preenche pelo menos um dos contactos: email ou telefone.
-            </p>
+            {!authenticatedCustomer && (
+                <p className="mt-3 text-sm text-gray-500">
+                    Preenche pelo menos um dos contactos: email ou telefone.
+                </p>
+            )}
             <InputError
                 className="mt-3"
                 message={showErrors ? errors.contactMethod : undefined}
             />
 
             <div className="mt-6 grid gap-4 border-t border-black/10 pt-6">
-                <ConsentField
-                    id="booking-privacy"
-                    name="privacy_accepted"
-                    checked={data.contact.privacyAccepted}
-                    onChange={(checked) =>
-                        changeContact('privacyAccepted', checked)
-                    }
-                    error={showErrors ? errors.privacyAccepted : undefined}
-                >
-                    Li e aceito a{' '}
-                    <Link
-                        href={privacyPolicy()}
-                        className="font-semibold underline underline-offset-4"
-                    >
-                        Política de Privacidade
-                    </Link>{' '}
-                    para o tratamento dos dados deste pedido.
-                </ConsentField>
+                {(!authenticatedCustomer ||
+                    !authenticatedCustomer.hasAcceptedLegalConsent) && (
+                    <>
+                        <ConsentField
+                            id="booking-privacy"
+                            name="privacy_accepted"
+                            checked={data.contact.privacyAccepted}
+                            onChange={(checked) =>
+                                changeContact('privacyAccepted', checked)
+                            }
+                            error={
+                                showErrors ? errors.privacyAccepted : undefined
+                            }
+                        >
+                            Li e aceito a{' '}
+                            <Link
+                                href={privacyPolicy()}
+                                className="font-semibold underline underline-offset-4"
+                            >
+                                Política de Privacidade
+                            </Link>{' '}
+                            para o tratamento dos dados deste pedido.
+                        </ConsentField>
 
-                <ConsentField
-                    id="booking-terms"
-                    name="terms_accepted"
-                    checked={data.contact.termsAccepted}
-                    onChange={(checked) =>
-                        changeContact('termsAccepted', checked)
-                    }
-                    error={showErrors ? errors.termsAccepted : undefined}
-                >
-                    Li e aceito os{' '}
-                    <Link
-                        href={termsAndConditions()}
-                        className="font-semibold underline underline-offset-4"
-                    >
-                        Termos e Condições
-                    </Link>
-                    .
-                </ConsentField>
+                        <ConsentField
+                            id="booking-terms"
+                            name="terms_accepted"
+                            checked={data.contact.termsAccepted}
+                            onChange={(checked) =>
+                                changeContact('termsAccepted', checked)
+                            }
+                            error={
+                                showErrors ? errors.termsAccepted : undefined
+                            }
+                        >
+                            Li e aceito os{' '}
+                            <Link
+                                href={termsAndConditions()}
+                                className="font-semibold underline underline-offset-4"
+                            >
+                                Termos e Condições
+                            </Link>
+                            .
+                        </ConsentField>
+                    </>
+                )}
 
-                <ConsentField
-                    id="booking-marketing"
-                    name="marketing_accepted"
-                    checked={data.contact.marketingAccepted}
-                    onChange={(checked) =>
-                        changeContact('marketingAccepted', checked)
-                    }
-                    error={showErrors ? errors.marketingAccepted : undefined}
-                >
-                    Quero receber campanhas e novidades da Color Fun Parks.
-                    <span className="ml-1 text-gray-500">(Opcional)</span>
-                </ConsentField>
+                {authenticatedCustomer ? (
+                    <>
+                        {authenticatedCustomer.hasAcceptedLegalConsent && (
+                            <p className="text-sm leading-6 text-gray-600">
+                                A tua conta já tem associada a aceitação da{' '}
+                                <Link
+                                    href={privacyPolicy()}
+                                    className="font-semibold underline underline-offset-4"
+                                >
+                                    Política de Privacidade
+                                </Link>{' '}
+                                e dos{' '}
+                                <Link
+                                    href={termsAndConditions()}
+                                    className="font-semibold underline underline-offset-4"
+                                >
+                                    Termos e Condições
+                                </Link>
+                                .
+                            </p>
+                        )}
+                        <div className="rounded-xl border border-black/10 bg-white/60 p-4 text-sm">
+                            <p className="font-semibold text-gray-900">
+                                Campanhas e novidades:{' '}
+                                {authenticatedCustomer.marketing.label}
+                            </p>
+                            <p className="mt-1 leading-6 text-gray-600">
+                                Esta escolha pertence às preferências da tua
+                                conta.{' '}
+                                <Link
+                                    href={editPreferences()}
+                                    className="font-semibold text-[#376b50] underline underline-offset-4"
+                                >
+                                    Gerir preferências
+                                </Link>
+                            </p>
+                        </div>
+                    </>
+                ) : (
+                    <ConsentField
+                        id="booking-marketing"
+                        name="marketing_accepted"
+                        checked={data.contact.marketingAccepted}
+                        onChange={(checked) =>
+                            changeContact('marketingAccepted', checked)
+                        }
+                        error={
+                            showErrors ? errors.marketingAccepted : undefined
+                        }
+                    >
+                        Quero receber campanhas e novidades da Color Fun Parks.
+                        <span className="ml-1 text-gray-500">(Opcional)</span>
+                    </ConsentField>
+                )}
             </div>
         </BookingSection>
     );

@@ -42,6 +42,8 @@ class NewsletterSubscription extends Model
 
     public const HOMEPAGE_SOURCE = 'homepage';
 
+    public const CUSTOMER_ACCOUNT_SOURCE = 'customer-account';
+
     /** @use HasFactory<NewsletterSubscriptionFactory> */
     use HasFactory, MassPrunable;
 

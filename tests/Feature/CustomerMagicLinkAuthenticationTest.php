@@ -16,7 +16,7 @@ beforeEach(function () {
     $this->withSession(['_token' => 'test-csrf-token']);
 });
 
-test('login is an email only customer access page', function () {
+test('login is the shared customer access page', function () {
     $this->get(route('login'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -46,6 +46,8 @@ test('requesting access sends a neutral response without creating an account', f
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => '  CUSTOMER@EXAMPLE.COM ',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])
         ->assertRedirect()
         ->assertSessionHas(
@@ -69,6 +71,8 @@ test('a valid emailed link creates and authenticates a customer', function () {
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'customer@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])->assertRedirect();
 
     $loginMail = null;
@@ -111,7 +115,13 @@ test('a valid emailed link creates and authenticates a customer', function () {
         ->and($customer->email)
         ->toBe('customer@example.com')
         ->and($customer->email_verified_at)
-        ->not->toBeNull();
+        ->not->toBeNull()
+        ->and($customer->privacy_accepted_at)
+        ->not->toBeNull()
+        ->and($customer->terms_accepted_at)
+        ->not->toBeNull()
+        ->and($customer->legal_consent_version)
+        ->toBe(User::LEGAL_CONSENT_VERSION);
 
     $this->assertAuthenticatedAs($customer);
 });
@@ -127,6 +137,8 @@ test('validating an email claims matching guest party bookings', function () {
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'customer@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])->assertRedirect();
 
     $loginMail = null;
@@ -154,6 +166,8 @@ test('an emailed link can only be used once', function () {
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'customer@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])->assertRedirect();
 
     $loginMail = null;
@@ -183,6 +197,8 @@ test('an expired emailed link cannot authenticate or create a customer', functio
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'customer@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])->assertRedirect();
 
     $loginMail = null;
@@ -212,6 +228,8 @@ test('requesting a customer link requires a valid email address', function () {
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'not-an-email',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])
         ->assertSessionHasErrors('email');
 
@@ -220,6 +238,21 @@ test('requesting a customer link requires a valid email address', function () {
         ->and(CustomerLoginLink::query()->count())
         ->toBe(0);
 
+    Mail::assertNothingQueued();
+});
+
+test('requesting a customer link requires both legal consents', function () {
+    Mail::fake();
+
+    $this->post(route('customer-login.request'), [
+        '_token' => 'test-csrf-token',
+        'email' => 'customer@example.com',
+    ])->assertSessionHasErrors([
+        'privacy_accepted',
+        'terms_accepted',
+    ]);
+
+    expect(CustomerLoginLink::query()->count())->toBe(0);
     Mail::assertNothingQueued();
 });
 
@@ -234,6 +267,8 @@ test('staff and administrators cannot bypass their authentication with a custome
     $this->post(route('customer-login.request'), [
         '_token' => 'test-csrf-token',
         'email' => 'team@example.com',
+        'privacy_accepted' => true,
+        'terms_accepted' => true,
     ])
         ->assertRedirect()
         ->assertSessionHas('status');

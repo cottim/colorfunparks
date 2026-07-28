@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
+use App\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -20,6 +22,10 @@ class StorePartyBookingRequest extends FormRequest
      */
     public function rules(): array
     {
+        $customer = $this->authenticatedCustomer();
+        $isAuthenticatedCustomer = $customer !== null;
+        $hasAccountLegalConsent = $customer
+            ?->hasAcceptedCurrentLegalConsent() ?? false;
         /** @var list<array{value: string, label: string}> $parks */
         $parks = config('party_bookings.parks');
         /** @var list<array{
@@ -49,24 +55,49 @@ class StorePartyBookingRequest extends FormRequest
             ->all();
 
         return [
-            'contact_name' => ['required', 'string', 'max:255'],
+            'contact_name' => [
+                Rule::requiredIf(! $isAuthenticatedCustomer),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'email' => [
                 'nullable',
-                'required_without:phone',
-                Rule::requiredIf($this->boolean('marketing_accepted')),
+                Rule::requiredIf(
+                    ! $isAuthenticatedCustomer
+                    && (
+                        $this->string('phone')->isEmpty()
+                        || $this->boolean('marketing_accepted')
+                    ),
+                ),
                 'string',
                 Rule::email()->rfcCompliant(),
                 'max:255',
             ],
             'phone' => [
                 'nullable',
-                'required_without:email',
+                Rule::requiredIf(
+                    ! $isAuthenticatedCustomer
+                    && $this->string('email')->isEmpty(),
+                ),
                 'string',
                 'max:30',
             ],
-            'privacy_accepted' => ['required', 'accepted'],
-            'terms_accepted' => ['required', 'accepted'],
-            'marketing_accepted' => ['required', 'boolean'],
+            'privacy_accepted' => [
+                Rule::excludeIf($hasAccountLegalConsent),
+                'required',
+                'accepted',
+            ],
+            'terms_accepted' => [
+                Rule::excludeIf($hasAccountLegalConsent),
+                'required',
+                'accepted',
+            ],
+            'marketing_accepted' => [
+                Rule::excludeIf($isAuthenticatedCustomer),
+                'required',
+                'boolean',
+            ],
             'park' => [
                 'required',
                 'string',
@@ -198,7 +229,10 @@ class StorePartyBookingRequest extends FormRequest
      */
     public function partyBookingData(): array
     {
-        $email = (string) $this->validated('email', '');
+        $customer = $this->authenticatedCustomer();
+        $email = $customer !== null
+            ? $customer->email
+            : (string) $this->validated('email', '');
         $phone = (string) $this->validated('phone', '');
         $website = (string) $this->validated('website', '');
         $validatedChoices = $this->validated('program_choices', []);
@@ -211,12 +245,20 @@ class StorePartyBookingRequest extends FormRequest
         }
 
         return [
-            'contact_name' => (string) $this->validated('contact_name'),
+            'contact_name' => $customer !== null
+                ? $customer->name
+                : (string) $this->validated('contact_name'),
             'email' => $email !== '' ? $email : null,
             'phone' => $phone !== '' ? $phone : null,
-            'privacy_accepted' => (bool) $this->validated('privacy_accepted'),
-            'terms_accepted' => (bool) $this->validated('terms_accepted'),
-            'marketing_accepted' => (bool) $this->validated('marketing_accepted'),
+            'privacy_accepted' => $customer?->hasAcceptedCurrentLegalConsent()
+                ? true
+                : (bool) $this->validated('privacy_accepted'),
+            'terms_accepted' => $customer?->hasAcceptedCurrentLegalConsent()
+                ? true
+                : (bool) $this->validated('terms_accepted'),
+            'marketing_accepted' => $customer !== null
+                ? $customer->hasAuthorizedMarketing()
+                : (bool) $this->validated('marketing_accepted'),
             'park' => (string) $this->validated('park'),
             'child_name' => (string) $this->validated('child_name'),
             'child_age' => (int) $this->validated('child_age'),
@@ -265,5 +307,12 @@ class StorePartyBookingRequest extends FormRequest
             'phone' => $this->string('phone')->trim()->toString(),
             'child_name' => $this->string('child_name')->trim()->toString(),
         ]);
+    }
+
+    public function authenticatedCustomer(): ?User
+    {
+        return $this->user()?->role === UserRole::Customer
+            ? $this->user()
+            : null;
     }
 }

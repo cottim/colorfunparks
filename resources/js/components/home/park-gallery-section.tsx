@@ -7,7 +7,13 @@ import {
 } from '@/components/ui/carousel';
 import { HomeSectionHeading } from './home-section-heading';
 
-const galleryImages = [
+export type GalleryImage = {
+    id: string;
+    src: string;
+    alt: string;
+};
+
+const galleryImages: GalleryImage[] = [
     {
         id: 'color-camp-experience',
         src: '/img/color_camp_1.jpg',
@@ -40,16 +46,30 @@ const galleryImages = [
     },
 ];
 
-export function ParkGallerySection() {
+type ParkGallerySectionProps = {
+    images?: GalleryImage[];
+    eyebrow?: string;
+    title?: string;
+    description?: string;
+    id?: string;
+};
+
+export function ParkGallerySection({
+    images = galleryImages,
+    eyebrow = 'Galeria',
+    title = 'Um pouco da diversão',
+    description = 'Descobre alguns dos momentos, atividades e campanhas que dão ainda mais cor aos nossos parques.',
+    id = 'park-gallery-title',
+}: ParkGallerySectionProps) {
     return (
-        <section aria-labelledby="park-gallery-title" className="bg-white/45">
+        <section aria-labelledby={id} className="bg-white/45">
             <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
                 <div>
                     <HomeSectionHeading
-                        id="park-gallery-title"
-                        eyebrow="Galeria"
-                        title="Um pouco da diversão"
-                        description="Descobre alguns dos momentos, atividades e campanhas que dão ainda mais cor aos nossos parques."
+                        id={id}
+                        eyebrow={eyebrow}
+                        title={title}
+                        description={description}
                     />
                 </div>
 
@@ -58,9 +78,9 @@ export function ParkGallerySection() {
                     aria-label="Galeria Color Fun Parks"
                 >
                     <CarouselContent>
-                        {galleryImages.map(({ id, src, alt }) => (
+                        {images.map(({ id: imageId, src, alt }) => (
                             <CarouselItem
-                                key={id}
+                                key={imageId}
                                 className="basis-4/5 sm:basis-1/2 lg:basis-1/3"
                             >
                                 <div className="aspect-4/5 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg">
