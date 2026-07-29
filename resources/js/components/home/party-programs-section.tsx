@@ -241,7 +241,7 @@ export function PartyProgramsSection({
                                 <ProgramFact
                                     icon={<UsersIcon />}
                                     label="Aniversário"
-                                    value={selectedProgram.ageRange}
+                                    value={`${selectedProgram.minimumAge} aos ${selectedProgram.maximumAge} anos`}
                                 />
                                 <ProgramFact
                                     icon={<UsersIcon />}

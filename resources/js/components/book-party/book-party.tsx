@@ -60,6 +60,12 @@ export function BookParty({
         initialProgram ? (initialProgramSelection?.choices ?? {}) : {},
         authenticatedCustomer,
     );
+    const minimumPartyAge = Math.min(
+        ...bookingOptions.programs.map((program) => program.minimumAge),
+    );
+    const maximumPartyAge = Math.max(
+        ...bookingOptions.programs.map((program) => program.maximumAge),
+    );
     const [data, dispatch] = useReducer(bookingReducer, initialBookingData);
     const [summaryData, summaryDispatch] = useReducer(
         bookingReducer,
@@ -85,6 +91,7 @@ export function BookParty({
         data,
         partyDateRange,
         bookingOptions.partyTimes,
+        bookingOptions.programs,
     );
     const errors = {
         ...clientValidation.errors,
@@ -372,6 +379,9 @@ export function BookParty({
 
                     <PartyChildFields
                         child={data.child}
+                        minimumAge={data.program?.minimumAge ?? minimumPartyAge}
+                        maximumAge={data.program?.maximumAge ?? maximumPartyAge}
+                        selectedProgramLabel={data.program?.label}
                         errors={errors}
                         showValidationErrors={showStepErrors('child')}
                         onChange={(field, value) =>

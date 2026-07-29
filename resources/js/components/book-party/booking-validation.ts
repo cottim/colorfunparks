@@ -1,6 +1,10 @@
 import { isAfter, isBefore, isValid, parseISO } from 'date-fns';
 import type { BookingDateRange } from '@/components/book-party/booking-date-range';
-import type { BookingData, BookingStep } from '@/components/book-party/types';
+import type {
+    BookingData,
+    BookingStep,
+    PartyProgram,
+} from '@/components/book-party/types';
 
 export type BookingValidation = {
     isValid: boolean;
@@ -48,8 +52,17 @@ export function validateBooking(
     data: BookingData,
     partyDateRange: BookingDateRange,
     partyTimes: readonly string[],
+    programs: readonly PartyProgram[],
 ): BookingValidation {
     const errors: BookingErrors = {};
+    const minimumPartyAge = Math.min(
+        ...programs.map((program) => program.minimumAge),
+    );
+    const maximumPartyAge = Math.max(
+        ...programs.map((program) => program.maximumAge),
+    );
+    const minimumAge = data.program?.minimumAge ?? minimumPartyAge;
+    const maximumAge = data.program?.maximumAge ?? maximumPartyAge;
 
     if (data.contact.name.trim() === '') {
         errors.contactName = 'Indica o teu nome.';
@@ -94,8 +107,14 @@ export function validateBooking(
 
     if (data.child.age.trim() === '') {
         errors.age = 'Indica a idade que a criança vai celebrar.';
-    } else if (!hasValidAge(data.child.age)) {
-        errors.age = 'Indica uma idade válida.';
+    } else if (!hasValidAge(data.child.age, minimumAge, maximumAge)) {
+        errors.age = data.program
+            ? `O ${data.program.label} destina-se a aniversários dos ${minimumAge} aos ${maximumAge} anos.`
+            : `A idade a celebrar deve estar entre ${minimumAge} e ${maximumAge} anos.`;
+
+        if (data.program) {
+            errors.program = errors.age;
+        }
     }
 
     if (data.guests.trim() === '') {
@@ -154,10 +173,18 @@ export function isBookingStepValid(
     return bookingStepErrorFields[step].every((field) => !errors[field]);
 }
 
-function hasValidAge(age: string): boolean {
+function hasValidAge(
+    age: string,
+    minimumAge: number,
+    maximumAge: number,
+): boolean {
     const numericAge = Number(age);
 
-    return Number.isInteger(numericAge) && numericAge >= 1 && numericAge <= 99;
+    return (
+        Number.isInteger(numericAge) &&
+        numericAge >= minimumAge &&
+        numericAge <= maximumAge
+    );
 }
 
 function hasValidGuestCount(guests: string): boolean {

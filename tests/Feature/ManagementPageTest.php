@@ -38,6 +38,7 @@ test('staff can view the management dashboard', function () {
         ->recycle($customer)
         ->create([
             'child_name' => 'Leonor',
+            'child_age' => 8,
             'park' => 'Color Party',
         ]);
     $staff = User::factory()->staff()->create();
@@ -84,6 +85,7 @@ test('staff can view the management dashboard', function () {
                 )
                 ->where('party_bookings.data.0.customer.email', 'maria@example.com')
                 ->where('party_bookings.data.0.child.name', 'Leonor')
+                ->where('party_bookings.data.0.child.age', 8)
                 ->where('party_bookings.data.0.park', 'Color Party'),
         );
 });
@@ -97,6 +99,7 @@ test('staff can open an individual party workspace', function () {
         ->recycle($customer)
         ->create([
             'child_name' => 'Leonor',
+            'child_age' => 8,
             'contact_phone' => '912 345 678',
             'program_choices' => [
                 'dessert' => [
@@ -118,6 +121,8 @@ test('staff can open an individual party workspace', function () {
                 ->where('party_booking.reference', $booking->reference())
                 ->where('party_booking.customer.name', 'Maria Cliente')
                 ->where('party_booking.customer.phone', '912 345 678')
+                ->where('party_booking.child.name', 'Leonor')
+                ->where('party_booking.child.age', 8)
                 ->where(
                     'party_booking.program_choices.dessert.label',
                     'Gelatina',

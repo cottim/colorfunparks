@@ -9,6 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use LogicException;
 
 class StorePartyBookingRequest extends FormRequest
 {
@@ -31,6 +32,8 @@ class StorePartyBookingRequest extends FormRequest
         /** @var list<array{
          *     value: string,
          *     label: string,
+         *     minimumAge: int,
+         *     maximumAge: int,
          *     choiceGroups: list<array{
          *         value: string,
          *         options: list<array{value: string}>
@@ -104,7 +107,11 @@ class StorePartyBookingRequest extends FormRequest
                 Rule::in(array_column($parks, 'value')),
             ],
             'child_name' => ['required', 'string', 'max:255'],
-            'child_age' => ['required', 'integer', 'between:1,99'],
+            'child_age' => [
+                'required',
+                'integer',
+                'between:'.$this->minimumPartyAge().','.$this->maximumPartyAge(),
+            ],
             'party_date' => [
                 'required',
                 'date_format:Y-m-d',
@@ -158,6 +165,9 @@ class StorePartyBookingRequest extends FormRequest
             function (Validator $validator): void {
                 /** @var list<array{
                  *     value: string,
+                 *     label: string,
+                 *     minimumAge: int,
+                 *     maximumAge: int,
                  *     choiceGroups: list<array{
                  *         value: string,
                  *         options: list<array{value: string}>
@@ -169,9 +179,34 @@ class StorePartyBookingRequest extends FormRequest
                     'value',
                     $this->string('program')->toString(),
                 );
+
+                if ($program === null) {
+                    return;
+                }
+
+                $childAge = $this->integer('child_age');
+
+                if (
+                    ! $validator->errors()->has('child_age')
+                    && (
+                        $childAge < $program['minimumAge']
+                        || $childAge > $program['maximumAge']
+                    )
+                ) {
+                    $validator->errors()->add(
+                        'child_age',
+                        sprintf(
+                            'O %s destina-se a aniversários dos %d aos %d anos.',
+                            $program['label'],
+                            $program['minimumAge'],
+                            $program['maximumAge'],
+                        ),
+                    );
+                }
+
                 $choices = $this->input('program_choices');
 
-                if ($program === null || ! is_array($choices)) {
+                if (! is_array($choices)) {
                     return;
                 }
 
@@ -286,7 +321,12 @@ class StorePartyBookingRequest extends FormRequest
             'terms_accepted.accepted' => 'É necessário aceitar os Termos e Condições.',
             'park.in' => 'Escolhe um parque válido.',
             'child_name.required' => 'Indica o nome da criança.',
-            'child_age.between' => 'Indica uma idade válida.',
+            'child_age.integer' => 'Indica uma idade válida.',
+            'child_age.between' => sprintf(
+                'A idade a celebrar deve estar entre %d e %d anos.',
+                $this->minimumPartyAge(),
+                $this->maximumPartyAge(),
+            ),
             'party_date.after_or_equal' => 'O dia da festa não pode estar no passado.',
             'party_date.before_or_equal' => 'O dia da festa ultrapassa o período disponível para reservas.',
             'party_time.in' => 'Escolhe um horário válido.',
@@ -307,6 +347,36 @@ class StorePartyBookingRequest extends FormRequest
             'phone' => $this->string('phone')->trim()->toString(),
             'child_name' => $this->string('child_name')->trim()->toString(),
         ]);
+    }
+
+    private function minimumPartyAge(): int
+    {
+        return $this->partyAgeLimits()['minimum'];
+    }
+
+    private function maximumPartyAge(): int
+    {
+        return $this->partyAgeLimits()['maximum'];
+    }
+
+    /**
+     * @return array{minimum: int, maximum: int}
+     */
+    private function partyAgeLimits(): array
+    {
+        /** @var list<array{minimumAge: int, maximumAge: int}> $programs */
+        $programs = config('party_bookings.programs');
+
+        if ($programs === []) {
+            throw new LogicException(
+                'At least one party program must be configured.',
+            );
+        }
+
+        return [
+            'minimum' => min(array_column($programs, 'minimumAge')),
+            'maximum' => max(array_column($programs, 'maximumAge')),
+        ];
     }
 
     public function authenticatedCustomer(): ?User

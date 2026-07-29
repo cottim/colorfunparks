@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label';
 
 type PartyChildFieldsProps = {
     child: PartyChild;
+    minimumAge: number;
+    maximumAge: number;
+    selectedProgramLabel?: string;
     errors: BookingErrors;
     showValidationErrors: boolean;
     onChange: (key: PartyChildField, value: string) => void;
@@ -21,6 +24,9 @@ type PartyChildFieldsProps = {
 
 export function PartyChildFields({
     child,
+    minimumAge,
+    maximumAge,
+    selectedProgramLabel,
     errors,
     showValidationErrors,
     onChange,
@@ -59,12 +65,19 @@ export function PartyChildFields({
 
                 <Field>
                     <Label htmlFor="booking-child-age">Idade a celebrar</Label>
+                    <p className="text-xs leading-5 text-gray-500">
+                        Entre {minimumAge} e {maximumAge} anos
+                        {selectedProgramLabel
+                            ? ` para o ${selectedProgramLabel}`
+                            : ''}
+                        .
+                    </p>
                     <Input
                         id="booking-child-age"
                         name="child_age"
                         type="number"
-                        min="1"
-                        max="99"
+                        min={minimumAge}
+                        max={maximumAge}
                         value={child.age}
                         onChange={(event) =>
                             onChange('age', event.target.value)

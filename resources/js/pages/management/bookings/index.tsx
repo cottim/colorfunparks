@@ -88,7 +88,8 @@ function BookingsTable({ bookings }: { bookings: ManagedPartyBooking[] }) {
                                     {booking.reference}
                                 </Link>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                    {booking.child.name} · {booking.park}
+                                    {booking.child.name}, {booking.child.age}{' '}
+                                    anos · {booking.park}
                                 </p>
                             </td>
                             <td className="px-4 py-4">

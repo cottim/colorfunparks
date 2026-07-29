@@ -14,7 +14,8 @@ export type PartyProgram = {
     description: string;
     accent: 'sky' | 'purple' | 'yellow';
     duration: string;
-    ageRange: string;
+    minimumAge: number;
+    maximumAge: number;
     guestAgeRange: string;
     availability: string;
     startingPrice: string;

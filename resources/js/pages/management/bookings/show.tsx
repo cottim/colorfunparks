@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeftIcon,
+    CakeSliceIcon,
     CalendarDaysIcon,
     ClockIcon,
     MailIcon,
@@ -79,7 +80,12 @@ export default function ManagementBooking({
                                 <Detail
                                     icon={UserRoundIcon}
                                     label="Criança"
-                                    value={`${booking.child.name}, ${booking.child.age} anos`}
+                                    value={booking.child.name}
+                                />
+                                <Detail
+                                    icon={CakeSliceIcon}
+                                    label="Idade a celebrar"
+                                    value={`${booking.child.age} anos`}
                                 />
                             </dl>
 

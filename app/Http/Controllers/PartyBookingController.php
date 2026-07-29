@@ -7,6 +7,7 @@ use App\Actions\Customer\RecordCustomerLegalConsent;
 use App\Actions\Newsletter\SubscribeToNewsletter;
 use App\Actions\PartyBooking\CreatePartyBooking;
 use App\Actions\PartyBooking\GetInitialPartyProgramSelection;
+use App\Actions\PartyBooking\SendPartyBookingReceipt;
 use App\Http\Requests\StorePartyBookingRequest;
 use App\UserRole;
 use Illuminate\Http\RedirectResponse;
@@ -57,6 +58,7 @@ class PartyBookingController extends Controller
     public function store(
         StorePartyBookingRequest $request,
         CreatePartyBooking $createPartyBooking,
+        SendPartyBookingReceipt $sendPartyBookingReceipt,
         SubscribeToNewsletter $subscribeToNewsletter,
         RecordCustomerLegalConsent $recordCustomerLegalConsent,
     ): RedirectResponse {
@@ -73,6 +75,7 @@ class PartyBookingController extends Controller
         }
 
         $booking = $createPartyBooking->handle($request->user(), $data);
+        $sendPartyBookingReceipt->handle($booking);
 
         if (
             $request->authenticatedCustomer() === null

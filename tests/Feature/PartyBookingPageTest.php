@@ -1,9 +1,12 @@
 <?php
 
 use App\Mail\ConfirmNewsletterSubscriptionMail;
+use App\Mail\PartyBookingReceivedMail;
+use App\Models\CustomerLoginLink;
 use App\Models\NewsletterSubscription;
 use App\Models\PartyBooking;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -16,6 +19,9 @@ test('the party booking page can be displayed', function () {
             ->where('bookingOptions.maxBookingMonthsAhead', 3)
             ->has('bookingOptions.parks', 3)
             ->has('bookingOptions.programs', 3)
+            ->where('bookingOptions.programs.0.minimumAge', 4)
+            ->where('bookingOptions.programs.0.maximumAge', 11)
+            ->where('bookingOptions.programs.2.minimumAge', 5)
             ->has('bookingOptions.partyTimes', 16)
             ->where('initialProgramSelection', null),
     );
@@ -131,6 +137,8 @@ test('an invalid homepage program is not pre-selected', function () {
 });
 
 test('guests can submit a party booking without attaching it to an account', function () {
+    Mail::fake();
+
     $this->post(
         route('party-bookings.store'),
         validPartyBookingPayload([
@@ -153,6 +161,8 @@ test('guests can submit a party booking without attaching it to an account', fun
         ->toBe('Color Party')
         ->and($booking->program)
         ->toBe('Menu Color')
+        ->and($booking->child_age)
+        ->toBe(8)
         ->and($booking->program_choices)
         ->toBe([
             'snack' => [
@@ -170,6 +180,86 @@ test('guests can submit a party booking without attaching it to an account', fun
         ->not->toBeNull()
         ->and($booking->terms_accepted_at)
         ->not->toBeNull();
+
+    Mail::assertQueued(
+        PartyBookingReceivedMail::class,
+        fn (PartyBookingReceivedMail $mail): bool => $mail->hasTo(
+            'maria@example.com',
+        ) && $mail->partyBooking->is($booking),
+    );
+});
+
+test('the party booking receipt gives the customer a secure account access link', function () {
+    Mail::fake();
+
+    $this->post(
+        route('party-bookings.store'),
+        validPartyBookingPayload(),
+    )->assertRedirect(route('party-bookings.received'));
+
+    $receipt = null;
+
+    Mail::assertQueued(
+        PartyBookingReceivedMail::class,
+        function (PartyBookingReceivedMail $mail) use (&$receipt): bool {
+            $receipt = $mail;
+
+            return true;
+        },
+    );
+
+    expect($receipt)
+        ->toBeInstanceOf(PartyBookingReceivedMail::class)
+        ->and($receipt->loginUrl)
+        ->not->toBeNull();
+
+    $loginRequest = Request::create($receipt->loginUrl);
+    $plainTextToken = basename($loginRequest->path());
+
+    expect($loginRequest->hasValidSignature(false))
+        ->toBeTrue()
+        ->and(
+            CustomerLoginLink::query()
+                ->where(
+                    'token_hash',
+                    hash('sha256', $plainTextToken),
+                )
+                ->value('email'),
+        )
+        ->toBe('maria@example.com');
+
+    $this->get($receipt->loginUrl)
+        ->assertRedirect(route('account.index'));
+
+    $booking = PartyBooking::query()->sole();
+
+    expect($booking->refresh()->user_id)
+        ->toBe(User::query()->sole()->id);
+});
+
+test('the party booking receipt summarizes the request without child details', function () {
+    $booking = PartyBooking::factory()->create([
+        'child_name' => 'Nome privado',
+        'party_date' => '2026-08-15',
+        'party_time' => '14:30',
+        'guests' => 18,
+        'park' => 'Color Party',
+        'program' => 'Menu Color',
+    ]);
+
+    $mail = new PartyBookingReceivedMail(
+        $booking,
+        'https://example.com/customer-login',
+    );
+
+    $mail
+        ->assertHasSubject(
+            'Recebemos o teu pedido de festa '.$booking->reference(),
+        )
+        ->assertSeeInHtml($booking->reference())
+        ->assertSeeInHtml('15/08/2026')
+        ->assertSeeInHtml('Entrar e acompanhar o pedido')
+        ->assertDontSeeInHtml('Nome privado');
 });
 
 test('authenticated customers are redirected to the newly created booking', function () {
@@ -282,6 +372,8 @@ test('customers can leave the booking flow to use another account', function () 
 });
 
 test('a phone only party booking remains valid', function () {
+    Mail::fake();
+
     $this->post(
         route('party-bookings.store'),
         validPartyBookingPayload([
@@ -296,6 +388,8 @@ test('a phone only party booking remains valid', function () {
         ->toBeNull()
         ->and($booking->contact_phone)
         ->toBe('+351 912 345 678');
+
+    Mail::assertNotQueued(PartyBookingReceivedMail::class);
 });
 
 test('party booking values are validated again by the server', function () {
@@ -316,6 +410,58 @@ test('party booking values are validated again by the server', function () {
         'guests',
         'program',
         'program_choices',
+    ]);
+
+    expect(PartyBooking::query()->count())->toBe(0);
+});
+
+test('the celebrated age must be within the supported party age range', function (
+    int $childAge,
+) {
+    $this->post(
+        route('party-bookings.store'),
+        validPartyBookingPayload([
+            'child_age' => $childAge,
+        ]),
+    )->assertSessionHasErrors([
+        'child_age' => 'A idade a celebrar deve estar entre 4 e 11 anos.',
+    ]);
+
+    expect(PartyBooking::query()->count())->toBe(0);
+})->with([
+    'below the minimum' => 3,
+    'above the maximum' => 12,
+]);
+
+test('the minimum and maximum ages for menu color are accepted', function (
+    int $childAge,
+) {
+    $this->post(
+        route('party-bookings.store'),
+        validPartyBookingPayload([
+            'child_age' => $childAge,
+        ]),
+    )->assertRedirect(route('party-bookings.received'));
+
+    expect(PartyBooking::query()->sole()->child_age)->toBe($childAge);
+})->with([
+    'minimum' => 4,
+    'maximum' => 11,
+]);
+
+test('the celebrated age must also match the selected program', function () {
+    $this->post(
+        route('party-bookings.store'),
+        validPartyBookingPayload([
+            'child_age' => 4,
+            'program' => 'lunch-party',
+            'program_choices' => [
+                'main' => 'pizza',
+                'dessert' => 'gelatin',
+            ],
+        ]),
+    )->assertSessionHasErrors([
+        'child_age' => 'O Menu Lunch Party destina-se a aniversários dos 5 aos 11 anos.',
     ]);
 
     expect(PartyBooking::query()->count())->toBe(0);
