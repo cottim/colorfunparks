@@ -83,6 +83,7 @@ export function BookParty({
     const bookingForm = useForm<PartyBookingPayload>(
         createPartyBookingPayload(initialBookingData),
     );
+    const isReadyToReview = completedSteps.size === bookingSteps.length;
 
     const partyDateRange = createBookingDateRange(
         bookingOptions.maxBookingMonthsAhead,
@@ -224,7 +225,26 @@ export function BookParty({
             setActiveStep(null);
 
             requestAnimationFrame(() => {
-                document.querySelector<HTMLElement>('#booking-submit')?.focus();
+                const mobileReviewHeading = document.querySelector<HTMLElement>(
+                    '#booking-review-mobile-heading',
+                );
+
+                if (
+                    mobileReviewHeading &&
+                    mobileReviewHeading.offsetParent !== null
+                ) {
+                    mobileReviewHeading.focus();
+
+                    return;
+                }
+
+                const visibleSubmitButton = Array.from(
+                    document.querySelectorAll<HTMLElement>(
+                        '[data-booking-submit]',
+                    ),
+                ).find((button) => button.offsetParent !== null);
+
+                visibleSubmitButton?.focus();
             });
 
             return;
@@ -346,10 +366,15 @@ export function BookParty({
 
     return (
         <div className="grid gap-6">
-            <BookingSummary data={summaryData} mobile />
+            {!isReadyToReview && <BookingSummary data={summaryData} mobile />}
 
             <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                <form onSubmit={submit} noValidate className="grid gap-5">
+                <form
+                    id="party-booking-form"
+                    onSubmit={submit}
+                    noValidate
+                    className="grid gap-5"
+                >
                     <ContactSection
                         data={data}
                         authenticatedCustomer={authenticatedCustomer}
@@ -444,53 +469,38 @@ export function BookParty({
                         workflow={sectionWorkflow('program', 'Rever pedido')}
                     />
 
-                    {completedSteps.size === bookingSteps.length && (
-                        <div className="rounded-2xl border border-[#558b6e]/40 bg-[#558b6e]/10 p-5 shadow-sm sm:p-6">
-                            <h2 className="text-lg font-bold text-gray-900">
-                                Pedido pronto para rever
-                            </h2>
-                            <p className="mt-1 text-sm leading-6 text-gray-600">
-                                Confirma o resumo antes de avançarmos para o
-                                envio do pedido.
-                            </p>
-                            <button
-                                id="booking-submit"
-                                type="submit"
-                                disabled={bookingForm.processing}
-                                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-[#558b6e] px-6 text-sm font-semibold text-white shadow-md transition hover:bg-[#47775d] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60 sm:w-auto"
-                            >
-                                {bookingForm.processing
-                                    ? 'A enviar pedido…'
-                                    : 'Confirmar e enviar pedido'}
-                            </button>
-                            <p
-                                role="status"
-                                aria-live="polite"
-                                className="mt-3 min-h-5 text-sm font-semibold text-[#35634b]"
-                            >
-                                {bookingForm.hasErrors &&
-                                    'Não foi possível enviar. Revê os campos assinalados.'}
-                            </p>
-                            <input
-                                type="text"
-                                name="website"
-                                value={bookingForm.data.website}
-                                onChange={(event) =>
-                                    bookingForm.setData(
-                                        'website',
-                                        event.target.value,
-                                    )
-                                }
-                                tabIndex={-1}
-                                autoComplete="off"
-                                className="hidden"
-                                aria-hidden="true"
-                            />
-                        </div>
+                    {isReadyToReview && (
+                        <BookingSummary
+                            data={summaryData}
+                            mobile
+                            review
+                            formId="party-booking-form"
+                            processing={bookingForm.processing}
+                            hasErrors={bookingForm.hasErrors}
+                        />
                     )}
+
+                    <input
+                        type="text"
+                        name="website"
+                        value={bookingForm.data.website}
+                        onChange={(event) =>
+                            bookingForm.setData('website', event.target.value)
+                        }
+                        tabIndex={-1}
+                        autoComplete="off"
+                        className="hidden"
+                        aria-hidden="true"
+                    />
                 </form>
 
-                <BookingSummary data={summaryData} />
+                <BookingSummary
+                    data={summaryData}
+                    review={isReadyToReview}
+                    formId="party-booking-form"
+                    processing={bookingForm.processing}
+                    hasErrors={bookingForm.hasErrors}
+                />
             </div>
         </div>
     );

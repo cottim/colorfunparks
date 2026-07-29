@@ -19,9 +19,10 @@ test('the party booking page can be displayed', function () {
             ->where('bookingOptions.maxBookingMonthsAhead', 3)
             ->has('bookingOptions.parks', 3)
             ->has('bookingOptions.programs', 3)
-            ->where('bookingOptions.programs.0.minimumAge', 4)
-            ->where('bookingOptions.programs.0.maximumAge', 11)
+            ->where('bookingOptions.programs.0.minimumAge', 5)
+            ->where('bookingOptions.programs.0.maximumAge', 10)
             ->where('bookingOptions.programs.2.minimumAge', 5)
+            ->where('bookingOptions.programs.2.maximumAge', 10)
             ->has('bookingOptions.partyTimes', 16)
             ->where('initialProgramSelection', null),
     );
@@ -424,13 +425,13 @@ test('the celebrated age must be within the supported party age range', function
             'child_age' => $childAge,
         ]),
     )->assertSessionHasErrors([
-        'child_age' => 'A idade a celebrar deve estar entre 4 e 11 anos.',
+        'child_age' => 'A idade a celebrar deve estar entre 5 e 10 anos.',
     ]);
 
     expect(PartyBooking::query()->count())->toBe(0);
 })->with([
-    'below the minimum' => 3,
-    'above the maximum' => 12,
+    'below the minimum' => 4,
+    'above the maximum' => 11,
 ]);
 
 test('the minimum and maximum ages for menu color are accepted', function (
@@ -445,15 +446,17 @@ test('the minimum and maximum ages for menu color are accepted', function (
 
     expect(PartyBooking::query()->sole()->child_age)->toBe($childAge);
 })->with([
-    'minimum' => 4,
-    'maximum' => 11,
+    'minimum' => 5,
+    'maximum' => 10,
 ]);
 
 test('the celebrated age must also match the selected program', function () {
+    config()->set('party_bookings.programs.2.minimumAge', 6);
+
     $this->post(
         route('party-bookings.store'),
         validPartyBookingPayload([
-            'child_age' => 4,
+            'child_age' => 5,
             'program' => 'lunch-party',
             'program_choices' => [
                 'main' => 'pizza',
@@ -461,7 +464,7 @@ test('the celebrated age must also match the selected program', function () {
             ],
         ]),
     )->assertSessionHasErrors([
-        'child_age' => 'O Menu Lunch Party destina-se a aniversários dos 5 aos 11 anos.',
+        'child_age' => 'O Menu Lunch Party destina-se a aniversários dos 6 aos 10 anos.',
     ]);
 
     expect(PartyBooking::query()->count())->toBe(0);

@@ -40,7 +40,7 @@ export function PartyChildFields({
             description="Para já, cada pedido corresponde à festa de uma criança."
             workflow={workflow}
         >
-            <div className="grid gap-5 sm:grid-cols-[1fr_10rem]">
+            <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_10rem]">
                 <Field>
                     <Label htmlFor="booking-child-name">Nome da criança</Label>
                     <Input
@@ -65,13 +65,6 @@ export function PartyChildFields({
 
                 <Field>
                     <Label htmlFor="booking-child-age">Idade a celebrar</Label>
-                    <p className="text-xs leading-5 text-gray-500">
-                        Entre {minimumAge} e {maximumAge} anos
-                        {selectedProgramLabel
-                            ? ` para o ${selectedProgramLabel}`
-                            : ''}
-                        .
-                    </p>
                     <Input
                         id="booking-child-age"
                         name="child_age"
@@ -91,6 +84,13 @@ export function PartyChildFields({
                             showValidationErrors && Boolean(errors.age)
                         }
                     />
+                    <p className="text-xs leading-5 text-gray-500">
+                        Dos {minimumAge} aos {maximumAge} anos
+                        {selectedProgramLabel
+                            ? ` para o ${selectedProgramLabel}`
+                            : ''}
+                        .
+                    </p>
                     <InputError
                         message={showValidationErrors ? errors.age : undefined}
                     />
