@@ -45,7 +45,7 @@ test('staff cannot access customer account pages', function () {
 
     $this->actingAs($staff)
         ->get(route('account.index'))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('customers only see their own open and recent bookings', function () {
@@ -219,7 +219,7 @@ test('customers cannot view another customers booking', function () {
 
     $this->actingAs($customer)
         ->get(route('account.bookings.show', $booking))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('customer account section pages are available', function (

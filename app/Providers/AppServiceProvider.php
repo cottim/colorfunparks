@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Actions\Article\GetLatestArticlePreviews;
 use App\Models\User;
 use App\UserRole;
 use Carbon\CarbonImmutable;
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureInertiaErrorPages();
 
         Gate::define(
             'access-management',
@@ -98,6 +103,46 @@ class AppServiceProvider extends ServiceProvider
             fn (Request $request): Limit => Limit::perMinute(10)->by(
                 $request->ip(),
             ),
+        );
+    }
+
+    private function configureInertiaErrorPages(): void
+    {
+        Inertia::handleExceptionsUsing(
+            function (ExceptionResponse $response): ?ExceptionResponse {
+                $request = $response->request;
+
+                if (
+                    ! $request->isMethod('GET')
+                    || $request->is('api/*')
+                    || $request->expectsJson()
+                    || ! in_array(
+                        $response->statusCode(),
+                        [
+                            SymfonyResponse::HTTP_FORBIDDEN,
+                            SymfonyResponse::HTTP_NOT_FOUND,
+                        ],
+                        true,
+                    )
+                ) {
+                    return null;
+                }
+
+                $response->response->setStatusCode(
+                    SymfonyResponse::HTTP_NOT_FOUND,
+                );
+                $user = $request->user();
+
+                return $response
+                    ->render('errors/not-found', [
+                        'canAccessManagement' => $user instanceof User
+                            && $user->canAccessManagement(),
+                        'latestArticles' => app(
+                            GetLatestArticlePreviews::class,
+                        )->handle(3),
+                    ])
+                    ->withSharedData();
+            },
         );
     }
 

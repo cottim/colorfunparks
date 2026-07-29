@@ -3,6 +3,7 @@ import {
     CakeSliceIcon,
     ContactRoundIcon,
     HouseIcon,
+    NewspaperIcon,
     SunIcon,
     UserCogIcon,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as managementIndex } from '@/routes/management';
+import { index as articlesIndex } from '@/routes/management/articles';
 import { index as bookingsIndex } from '@/routes/management/bookings';
 import { index as colorCampRegistrationsIndex } from '@/routes/management/color-camp-registrations';
 import { index as customersIndex } from '@/routes/management/customers';
@@ -43,6 +45,11 @@ export function AppSidebar() {
             title: 'Color Camp',
             href: colorCampRegistrationsIndex(),
             icon: SunIcon,
+        },
+        {
+            title: 'Conteúdos',
+            href: articlesIndex(),
+            icon: NewspaperIcon,
         },
         {
             title: 'Clientes',

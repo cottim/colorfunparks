@@ -1,4 +1,8 @@
 import { createInertiaApp } from '@inertiajs/react';
+import {
+    hasAuthenticatedUser,
+    NewsletterBrowserStateBoundary,
+} from '@/components/newsletter-browser-state-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -17,6 +21,8 @@ createInertiaApp({
             case name === 'welcome':
             case name.startsWith('legal/'):
             case name.startsWith('party-bookings/'):
+            case name.startsWith('articles/'):
+            case name.startsWith('errors/'):
             case name.startsWith('services/'):
             case name.startsWith('color-camp-registrations/'):
                 return null;
@@ -33,9 +39,12 @@ createInertiaApp({
         }
     },
     strictMode: true,
-    withApp(app) {
+    withApp(app, { page }) {
         return (
             <TooltipProvider delayDuration={0}>
+                <NewsletterBrowserStateBoundary
+                    initiallyAuthenticated={hasAuthenticatedUser(page.props)}
+                />
                 {app}
                 <Toaster />
             </TooltipProvider>

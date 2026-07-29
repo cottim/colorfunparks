@@ -26,7 +26,7 @@ test('customers cannot access management pages', function (string $route) {
 
     $this->actingAs($customer)
         ->get(route($route))
-        ->assertForbidden();
+        ->assertNotFound();
 })->with([
     'dashboard' => 'management.index',
     'bookings' => 'management.bookings.index',
@@ -52,7 +52,7 @@ test('staff can access operational pages but not user management', function () {
         ->assertOk();
     $this->actingAs($staff)
         ->get(route('management.users.index'))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('administrators can access user management', function () {

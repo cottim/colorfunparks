@@ -20,7 +20,7 @@ test('customers use their account instead of the staff dashboard', function () {
 
     $this->actingAs($customer)
         ->get(route('dashboard'))
-        ->assertForbidden();
+        ->assertNotFound();
 
     $this->get(route('account.index'))->assertOk();
 });

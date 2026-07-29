@@ -42,6 +42,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read PlayCardMembership|null $playCardMembership
  * @property-read Collection<int, ColorCampRegistration> $colorCampRegistrations
  * @property-read Collection<int, PartyBooking> $partyBookings
+ * @property-read Collection<int, Article> $articles
  * @property-read Collection<int, StaffInvitation> $staffInvitations
  */
 #[Fillable(['name', 'email', 'password'])]
@@ -92,6 +93,14 @@ class User extends Authenticatable implements PasskeyUser
     public function partyBookings(): HasMany
     {
         return $this->hasMany(PartyBooking::class);
+    }
+
+    /**
+     * @return HasMany<Article, $this>
+     */
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class, 'author_id');
     }
 
     /**

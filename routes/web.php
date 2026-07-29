@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthenticateCustomerController;
 use App\Http\Controllers\ColorCampRegistrationController;
 use App\Http\Controllers\ConfirmNewsletterSubscriptionController;
@@ -9,6 +10,8 @@ use App\Http\Controllers\CustomerPartyBookingController;
 use App\Http\Controllers\CustomerPreferenceController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\ExitPartyBookingCustomerSessionController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Management\ArticleController as ManagementArticleController;
 use App\Http\Controllers\Management\ColorCampRegistrationController as ManagementColorCampRegistrationController;
 use App\Http\Controllers\Management\CustomerController as ManagementCustomerController;
 use App\Http\Controllers\Management\DashboardController as ManagementDashboardController;
@@ -19,26 +22,16 @@ use App\Http\Controllers\PartyBookingController;
 use App\Http\Controllers\RequestCustomerLoginLinkController;
 use App\Http\Controllers\StaffInvitationController;
 use App\Http\Controllers\SubscribeCustomerMarketingController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get(
-    '/',
-    fn (Request $request) => Inertia::render('welcome', [
-        'partyPrograms' => config('party_bookings.programs'),
-        'sharedPartyProgramIncludes' => config(
-            'party_bookings.shared_program_includes',
-        ),
-        'partyProgramBadges' => config('party_bookings.program_badges'),
-        'partyProgramConditions' => config(
-            'party_bookings.program_conditions',
-        ),
-        'showNewsletter' => ! (
-            $request->user()?->hasAuthorizedMarketing() ?? false
-        ),
-    ]),
-)->name('home');
+Route::get('/', HomeController::class)->name('home');
+
+Route::get('/novidades', [ArticleController::class, 'index'])
+    ->name('articles.index');
+Route::get('/novidades/{article:slug}', [
+    ArticleController::class,
+    'show',
+])->name('articles.show');
 
 Route::middleware('guest')->group(function () {
     Route::redirect('/register', '/login')->name('register');
@@ -169,6 +162,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             )->name('color-camp-registrations.update');
             Route::get('/clientes', ManagementCustomerController::class)
                 ->name('customers.index');
+            Route::resource('conteudos', ManagementArticleController::class)
+                ->except(['show'])
+                ->parameters(['conteudos' => 'article'])
+                ->names([
+                    'index' => 'articles.index',
+                    'create' => 'articles.create',
+                    'store' => 'articles.store',
+                    'edit' => 'articles.edit',
+                    'update' => 'articles.update',
+                    'destroy' => 'articles.destroy',
+                ]);
             Route::get('/utilizadores', [InternalUserController::class, 'index'])
                 ->middleware('can:manage-internal-users')
                 ->name('users.index');

@@ -188,7 +188,7 @@ test('an emailed link can only be used once', function () {
         '_token' => 'test-csrf-token',
     ]);
 
-    $this->get($loginMail->loginUrl)->assertForbidden();
+    $this->get($loginMail->loginUrl)->assertNotFound();
 });
 
 test('an expired emailed link cannot authenticate or create a customer', function () {
@@ -216,7 +216,7 @@ test('an expired emailed link cannot authenticate or create a customer', functio
         (int) config('customer_auth.login_link_expiration_minutes') + 1,
     )->minutes();
 
-    $this->get($loginMail->loginUrl)->assertForbidden();
+    $this->get($loginMail->loginUrl)->assertNotFound();
 
     $this->assertGuest();
     expect(User::query()->count())->toBe(0);
@@ -284,5 +284,5 @@ test('the customer account rejects staff and administrators', function () {
 
     $this->actingAs($staff)
         ->get(route('account.index'))
-        ->assertForbidden();
+        ->assertNotFound();
 });

@@ -10,6 +10,14 @@ import { CtaButton } from '@/components/ui/cta-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    getNewsletterStorageSnapshot,
+    parseNewsletterSubmission,
+    removeNewsletterSubmission,
+    saveNewsletterSubmission,
+    subscribeToNewsletterStorage,
+} from '@/lib/newsletter-submission-storage';
+import type { SavedNewsletterSubmission } from '@/lib/newsletter-submission-storage';
 import { privacyPolicy } from '@/routes/legal';
 
 type NewsletterData = {
@@ -29,64 +37,11 @@ type Feedback = {
     message: string;
 };
 
-type SavedNewsletterSubmission = {
-    status: 'pending' | 'confirmed';
-    email: string;
-    maskedEmail: string;
-    expirationMinutes?: number;
-};
-
-const newsletterStorageKey = 'color-fun-parks.newsletter-submission.v1';
-const newsletterStorageEvent = 'newsletter-submission-changed';
-
-function subscribeToNewsletterStorage(callback: () => void) {
-    function handleStorage(event: StorageEvent) {
-        if (event.key === newsletterStorageKey) {
-            callback();
-        }
-    }
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener(newsletterStorageEvent, callback);
-
-    return () => {
-        window.removeEventListener('storage', handleStorage);
-        window.removeEventListener(newsletterStorageEvent, callback);
-    };
-}
-
-function getNewsletterStorageSnapshot() {
-    return window.localStorage.getItem(newsletterStorageKey);
-}
-
-function saveNewsletterSubmission(submission: SavedNewsletterSubmission) {
-    window.localStorage.setItem(
-        newsletterStorageKey,
-        JSON.stringify(submission),
-    );
-    window.dispatchEvent(new Event(newsletterStorageEvent));
-}
-
-function removeNewsletterSubmission() {
-    window.localStorage.removeItem(newsletterStorageKey);
-    window.dispatchEvent(new Event(newsletterStorageEvent));
-}
-
-function parseNewsletterSubmission(
-    storedValue: string | null,
-): SavedNewsletterSubmission | null {
-    if (storedValue === null) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(storedValue) as SavedNewsletterSubmission;
-    } catch {
-        return null;
-    }
-}
-
-export function NewsletterSection() {
+export function NewsletterSection({
+    isAuthenticated,
+}: {
+    isAuthenticated: boolean;
+}) {
     const { data, setData, transform, post, reset, errors, processing } =
         useHttp<NewsletterData, NewsletterResponse>({
             email: '',
@@ -94,6 +49,8 @@ export function NewsletterSection() {
             website: '',
         });
     const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const [authenticatedSubmission, setAuthenticatedSubmission] =
+        useState<SavedNewsletterSubmission | null>(null);
     const reduceMotion = useReducedMotion();
     const storedSubmission = useSyncExternalStore(
         subscribeToNewsletterStorage,
@@ -104,6 +61,9 @@ export function NewsletterSection() {
         () => parseNewsletterSubmission(storedSubmission),
         [storedSubmission],
     );
+    const activeSubmission = isAuthenticated
+        ? authenticatedSubmission
+        : savedSubmission;
 
     useEffect(() => {
         if (
@@ -135,12 +95,12 @@ export function NewsletterSection() {
     }
 
     function sendSubscription() {
-        const email = savedSubmission?.email || data.email;
+        const email = activeSubmission?.email || data.email;
 
         transform((formData) => ({
             ...formData,
             email,
-            privacy_consent: savedSubmission ? true : formData.privacy_consent,
+            privacy_consent: activeSubmission ? true : formData.privacy_consent,
         }));
 
         post(NewsletterSubscriptionController.url(), {
@@ -153,7 +113,12 @@ export function NewsletterSection() {
                     expirationMinutes: response.expiration_minutes,
                 };
 
-                saveNewsletterSubmission(submission);
+                if (isAuthenticated) {
+                    setAuthenticatedSubmission(submission);
+                } else {
+                    saveNewsletterSubmission(submission);
+                }
+
                 setFeedback({
                     type: 'success',
                     message: response.message,
@@ -177,6 +142,7 @@ export function NewsletterSection() {
 
     function correctEmail() {
         removeNewsletterSubmission();
+        setAuthenticatedSubmission(null);
         setFeedback(null);
         reset();
     }
@@ -252,9 +218,9 @@ export function NewsletterSection() {
                         className="rounded-2xl bg-white p-5 text-gray-900 shadow-lg sm:p-6"
                     >
                         <AnimatePresence mode="wait" initial={false}>
-                            {savedSubmission ? (
+                            {activeSubmission ? (
                                 <motion.div
-                                    key={`newsletter-${savedSubmission.status}`}
+                                    key={`newsletter-${activeSubmission.status}`}
                                     initial={
                                         reduceMotion
                                             ? false
@@ -298,22 +264,22 @@ export function NewsletterSection() {
                                     </motion.div>
                                     <div className="grid gap-2">
                                         <h3 className="text-xl font-bold">
-                                            {savedSubmission.status ===
+                                            {activeSubmission.status ===
                                             'confirmed'
                                                 ? 'Subscrição confirmada'
                                                 : 'Confirma a tua inscrição'}
                                         </h3>
                                         <p className="text-sm leading-6 text-gray-600">
-                                            {savedSubmission.status ===
+                                            {activeSubmission.status ===
                                             'confirmed'
                                                 ? 'Já estás na nossa lista de novidades.'
-                                                : `Se a inscrição ainda estiver por confirmar, receberás um email em ${savedSubmission.maskedEmail}.`}
+                                                : `Se a inscrição ainda estiver por confirmar, receberás um email em ${activeSubmission.maskedEmail}.`}
                                         </p>
-                                        {savedSubmission.status ===
+                                        {activeSubmission.status ===
                                             'pending' && (
                                             <p className="text-xs leading-5 text-gray-500">
-                                                {savedSubmission.expirationMinutes
-                                                    ? `O link é válido durante ${savedSubmission.expirationMinutes} minutos. `
+                                                {activeSubmission.expirationMinutes
+                                                    ? `O link é válido durante ${activeSubmission.expirationMinutes} minutos. `
                                                     : ''}
                                                 Podes pedir outro email após
                                                 alguns minutos.
@@ -321,7 +287,7 @@ export function NewsletterSection() {
                                         )}
                                     </div>
 
-                                    {savedSubmission.status === 'pending' && (
+                                    {activeSubmission.status === 'pending' && (
                                         <div className="flex flex-col gap-3 sm:flex-row">
                                             <Button
                                                 type="button"

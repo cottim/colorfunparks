@@ -15,18 +15,23 @@ import { PublicFooter } from '@/components/public-footer';
 import { PublicHeader } from '@/components/public-header';
 import { CtaButton } from '@/components/ui/cta-button';
 import { create as createPartyBooking } from '@/routes/party-bookings';
+import type { ArticlePreview } from '@/types/articles';
 
 export default function Welcome({
     partyPrograms,
     sharedPartyProgramIncludes,
     partyProgramBadges,
     partyProgramConditions,
+    latestArticles,
+    isAuthenticated,
     showNewsletter,
 }: {
     partyPrograms: PartyProgram[];
     sharedPartyProgramIncludes: string[];
     partyProgramBadges: PartyProgramBadge[];
     partyProgramConditions: string[];
+    latestArticles: ArticlePreview[];
+    isAuthenticated: boolean;
     showNewsletter: boolean;
 }) {
     return (
@@ -56,8 +61,10 @@ export default function Welcome({
                     <ServicesSection />
                     <ParkGallerySection />
                     <CustomerFeedbackSection />
-                    <BlogSection />
-                    {showNewsletter && <NewsletterSection />}
+                    <BlogSection articles={latestArticles} />
+                    {showNewsletter && (
+                        <NewsletterSection isAuthenticated={isAuthenticated} />
+                    )}
                 </main>
 
                 <PublicFooter className="mt-auto" />

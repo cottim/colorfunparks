@@ -12,7 +12,9 @@ test('the homepage hides the newsletter for authenticated confirmed subscribers'
     $guestResponse = $this->get(route('home'));
 
     $guestResponse->assertOk()->assertInertia(
-        fn (Assert $page) => $page->where('showNewsletter', true),
+        fn (Assert $page) => $page
+            ->where('isAuthenticated', false)
+            ->where('showNewsletter', true),
     );
 
     $customer = User::factory()->create();
@@ -25,6 +27,9 @@ test('the homepage hides the newsletter for authenticated confirmed subscribers'
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page->where(
+                'isAuthenticated',
+                true,
+            )->where(
                 'showNewsletter',
                 true,
             ),
@@ -41,6 +46,9 @@ test('the homepage hides the newsletter for authenticated confirmed subscribers'
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page->where(
+                'isAuthenticated',
+                true,
+            )->where(
                 'showNewsletter',
                 false,
             ),

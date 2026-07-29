@@ -135,7 +135,7 @@ test('an invalid email change token cannot alter the account', function () {
         absolute: false,
     );
 
-    $this->get($url)->assertForbidden();
+    $this->get($url)->assertNotFound();
 
     expect($user->refresh()->email)->toBe('current@example.com')
         ->and($pendingEmailChange->fresh())->not->toBeNull();

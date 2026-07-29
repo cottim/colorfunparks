@@ -222,7 +222,7 @@ test('customers only see their own Color Camp registrations', function () {
                 $otherRegistration,
             ),
         )
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('staff can manage Color Camp registrations', function () {

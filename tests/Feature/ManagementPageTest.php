@@ -23,7 +23,7 @@ test('customers cannot access the management page', function () {
 
     $this->actingAs($customer)
         ->get(route('management.index'))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('staff can view the management dashboard', function () {
@@ -211,7 +211,7 @@ test('customers cannot open the management party workspace', function () {
 
     $this->actingAs($customer)
         ->get(route('management.bookings.show', $booking))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('administrators can access the management page', function () {
