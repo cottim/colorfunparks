@@ -23,6 +23,7 @@ export type ManagedPartyBooking = {
     id: number;
     reference: string;
     status: Status;
+    archived_at: string | null;
     customer: {
         name: string;
         email: string;

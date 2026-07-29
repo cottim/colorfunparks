@@ -6,6 +6,7 @@ import {
     PaginationNav,
     StatusBadge,
 } from '@/components/management/management-ui';
+import { cn } from '@/lib/utils';
 import {
     index as bookingsIndex,
     show as bookingShow,
@@ -14,8 +15,10 @@ import type { ManagedPartyBooking, Pagination } from '@/types/management';
 
 export default function ManagementBookings({
     party_bookings: partyBookings,
+    show_archived: showArchived,
 }: {
     party_bookings: Pagination<ManagedPartyBooking>;
+    show_archived: boolean;
 }) {
     return (
         <>
@@ -27,11 +30,36 @@ export default function ManagementBookings({
                     description="Acompanha todos os pedidos de marcação recebidos."
                 />
                 <ManagementSection
-                    title="Pedidos de marcação"
-                    description={`${partyBookings.total} pedido${partyBookings.total === 1 ? '' : 's'} guardado${partyBookings.total === 1 ? '' : 's'}.`}
+                    title={showArchived ? 'Festas arquivadas' : 'Festas ativas'}
+                    description={`${partyBookings.total} pedido${partyBookings.total === 1 ? '' : 's'} ${showArchived ? 'arquivado' : 'ativo'}${partyBookings.total === 1 ? '' : 's'}.`}
                 >
+                    <nav
+                        aria-label="Filtrar festas"
+                        className="mb-5 flex w-fit gap-1 rounded-lg bg-muted p-1"
+                    >
+                        <Link
+                            href={bookingsIndex()}
+                            className={filterClassName(!showArchived)}
+                        >
+                            Ativas
+                        </Link>
+                        <Link
+                            href={bookingsIndex({
+                                query: { arquivadas: 1 },
+                            })}
+                            className={filterClassName(showArchived)}
+                        >
+                            Arquivadas
+                        </Link>
+                    </nav>
                     {partyBookings.data.length === 0 ? (
-                        <EmptyState message="Ainda não existem pedidos de festa." />
+                        <EmptyState
+                            message={
+                                showArchived
+                                    ? 'Ainda não existem festas arquivadas.'
+                                    : 'Ainda não existem pedidos de festa ativos.'
+                            }
+                        />
                     ) : (
                         <>
                             <BookingsTable bookings={partyBookings.data} />
@@ -44,6 +72,15 @@ export default function ManagementBookings({
                 </ManagementSection>
             </div>
         </>
+    );
+}
+
+function filterClassName(isActive: boolean): string {
+    return cn(
+        'rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:outline-none',
+        isActive
+            ? 'bg-background text-foreground shadow-xs'
+            : 'text-muted-foreground hover:text-foreground',
     );
 }
 

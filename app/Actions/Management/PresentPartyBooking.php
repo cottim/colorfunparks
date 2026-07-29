@@ -12,6 +12,7 @@ class PresentPartyBooking
      *     id: int,
      *     reference: string,
      *     status: array{value: string, label: string},
+     *     archived_at: string|null,
      *     customer: array{name: string, email: string, phone: string|null},
      *     park: string,
      *     child: array{name: string, age: int},
@@ -38,6 +39,7 @@ class PresentPartyBooking
                 'value' => $partyBooking->status->value,
                 'label' => $partyBooking->status->label(),
             ],
+            'archived_at' => $partyBooking->archived_at?->toISOString(),
             'customer' => [
                 'name' => $partyBooking->contact_name
                     ?? $customerName

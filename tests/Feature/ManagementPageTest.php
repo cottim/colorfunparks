@@ -123,13 +123,86 @@ test('staff can open an individual party workspace', function () {
                 ->where('party_booking.customer.phone', '912 345 678')
                 ->where('party_booking.child.name', 'Leonor')
                 ->where('party_booking.child.age', 8)
+                ->where('party_booking.archived_at', null)
                 ->where(
                     'party_booking.program_choices.dessert.label',
                     'Gelatina',
                 )
                 ->where('party_booking.total_cents', null)
-                ->where('party_booking.payment_status', null),
+                ->where('party_booking.payment_status', null)
+                ->where('permissions.archive', true)
+                ->where('permissions.delete', false),
         );
+});
+
+test('staff can archive and restore a party booking', function () {
+    $booking = PartyBooking::factory()->create();
+    $staff = User::factory()->staff()->create();
+
+    $this->actingAs($staff)
+        ->patch(route('management.bookings.archive', $booking))
+        ->assertRedirect(route('management.bookings.show', $booking))
+        ->assertSessionHas('success', 'A festa foi arquivada.');
+
+    expect($booking->refresh()->archived_at)->not->toBeNull();
+
+    $this->actingAs($staff)
+        ->get(route('management.bookings.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('show_archived', false)
+                ->has('party_bookings.data', 0),
+        );
+
+    $this->actingAs($staff)
+        ->get(route('management.bookings.index', ['arquivadas' => 1]))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('show_archived', true)
+                ->has('party_bookings.data', 1)
+                ->where(
+                    'party_bookings.data.0.reference',
+                    $booking->reference(),
+                ),
+        );
+
+    $this->actingAs($staff)
+        ->delete(route('management.bookings.unarchive', $booking))
+        ->assertRedirect(route('management.bookings.show', $booking))
+        ->assertSessionHas(
+            'success',
+            'A festa voltou à lista de festas ativas.',
+        );
+
+    expect($booking->refresh()->archived_at)->toBeNull();
+});
+
+test('staff cannot permanently delete a party booking', function () {
+    $booking = PartyBooking::factory()->create();
+    $staff = User::factory()->staff()->create();
+
+    $this->actingAs($staff)
+        ->delete(route('management.bookings.destroy', $booking))
+        ->assertForbidden();
+
+    $this->assertModelExists($booking);
+});
+
+test('administrators can permanently delete a party booking', function () {
+    $booking = PartyBooking::factory()->create();
+    $administrator = User::factory()->admin()->create();
+
+    $this->actingAs($administrator)
+        ->delete(route('management.bookings.destroy', $booking))
+        ->assertRedirect(route('management.bookings.index'))
+        ->assertSessionHas(
+            'success',
+            "A festa {$booking->reference()} foi eliminada.",
+        );
+
+    $this->assertModelMissing($booking);
 });
 
 test('customers cannot open the management party workspace', function () {
@@ -143,8 +216,18 @@ test('customers cannot open the management party workspace', function () {
 
 test('administrators can access the management page', function () {
     $administrator = User::factory()->admin()->create();
+    $booking = PartyBooking::factory()->create();
 
     $this->actingAs($administrator)
         ->get(route('management.index'))
         ->assertOk();
+
+    $this->actingAs($administrator)
+        ->get(route('management.bookings.show', $booking))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('permissions.archive', true)
+                ->where('permissions.delete', true),
+        );
 });

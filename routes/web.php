@@ -143,6 +143,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 '/festas/{partyBooking}',
                 [ManagementPartyBookingController::class, 'show'],
             )->name('bookings.show');
+            Route::patch(
+                '/festas/{partyBooking}/arquivo',
+                [ManagementPartyBookingController::class, 'archive'],
+            )->name('bookings.archive');
+            Route::delete(
+                '/festas/{partyBooking}/arquivo',
+                [ManagementPartyBookingController::class, 'unarchive'],
+            )->name('bookings.unarchive');
+            Route::delete(
+                '/festas/{partyBooking}',
+                [ManagementPartyBookingController::class, 'destroy'],
+            )->name('bookings.destroy');
             Route::get(
                 '/color-camp',
                 [ManagementColorCampRegistrationController::class, 'index'],

@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int|null $user_id
  * @property PartyBookingStatus $status
+ * @property Carbon|null $archived_at
  * @property string $park
  * @property string $child_name
  * @property int $child_age
@@ -34,6 +35,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'user_id',
     'status',
+    'archived_at',
     'park',
     'child_name',
     'child_age',
@@ -84,6 +86,7 @@ class PartyBooking extends Model
     {
         return [
             'status' => PartyBookingStatus::class,
+            'archived_at' => 'datetime',
             'party_date' => 'date',
             'program_choices' => 'array',
             'privacy_accepted_at' => 'datetime',

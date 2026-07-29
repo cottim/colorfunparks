@@ -1,5 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import {
+    ArchiveIcon,
+    ArchiveRestoreIcon,
     ArrowLeftIcon,
     CakeSliceIcon,
     CalendarDaysIcon,
@@ -9,6 +11,7 @@ import {
     MessageSquareTextIcon,
     PartyPopperIcon,
     PhoneIcon,
+    Trash2Icon,
     UserRoundIcon,
     UsersIcon,
 } from 'lucide-react';
@@ -17,21 +20,46 @@ import {
     ManagementSection,
     StatusBadge,
 } from '@/components/management/management-ui';
-import { index as bookingsIndex } from '@/routes/management/bookings';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    archive as archiveBooking,
+    destroy as destroyBooking,
+    index as bookingsIndex,
+    unarchive as unarchiveBooking,
+} from '@/routes/management/bookings';
 import type { ManagedPartyBooking } from '@/types/management';
 
 export default function ManagementBooking({
     party_booking: booking,
+    permissions,
 }: {
     party_booking: ManagedPartyBooking;
+    permissions: {
+        archive: boolean;
+        delete: boolean;
+    };
 }) {
+    const bookingsIndexRoute = booking.archived_at
+        ? bookingsIndex({ query: { arquivadas: 1 } })
+        : bookingsIndex();
+
     return (
         <>
             <Head title={booking.reference} />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
                 <Link
-                    href={bookingsIndex()}
+                    href={bookingsIndexRoute}
                     className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-[#558b6e] focus-visible:outline-none"
                 >
                     <ArrowLeftIcon className="size-4" aria-hidden="true" />
@@ -42,7 +70,19 @@ export default function ManagementBooking({
                     eyebrow="Festa"
                     title={booking.reference}
                     description={`Pedido recebido em ${formatRequestDate(booking.created_at)} por ${booking.customer.name}.`}
-                    action={<StatusBadge status={booking.status} />}
+                    action={
+                        <div className="flex flex-wrap gap-2">
+                            <StatusBadge status={booking.status} />
+                            {booking.archived_at && (
+                                <StatusBadge
+                                    status={{
+                                        value: 'archived',
+                                        label: 'Arquivada',
+                                    }}
+                                />
+                            )}
+                        </div>
+                    }
                 />
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -183,10 +223,115 @@ export default function ManagementBooking({
                                 />
                             </dl>
                         </ManagementSection>
+
+                        {(permissions.archive || permissions.delete) && (
+                            <ManagementSection
+                                title="Ações"
+                                description="Arquivar mantém o histórico. Eliminar remove definitivamente o pedido."
+                            >
+                                <div className="grid gap-3">
+                                    {permissions.archive && (
+                                        <Form
+                                            {...(booking.archived_at
+                                                ? unarchiveBooking.form(
+                                                      booking.id,
+                                                  )
+                                                : archiveBooking.form(
+                                                      booking.id,
+                                                  ))}
+                                        >
+                                            {({ processing }) => (
+                                                <Button
+                                                    type="submit"
+                                                    variant="outline"
+                                                    className="w-full justify-start"
+                                                    disabled={processing}
+                                                >
+                                                    {booking.archived_at ? (
+                                                        <ArchiveRestoreIcon
+                                                            aria-hidden="true"
+                                                            className="size-4"
+                                                        />
+                                                    ) : (
+                                                        <ArchiveIcon
+                                                            aria-hidden="true"
+                                                            className="size-4"
+                                                        />
+                                                    )}
+                                                    {processing
+                                                        ? 'A guardar...'
+                                                        : booking.archived_at
+                                                          ? 'Repor festa'
+                                                          : 'Arquivar festa'}
+                                                </Button>
+                                            )}
+                                        </Form>
+                                    )}
+
+                                    {permissions.delete && (
+                                        <DeletePartyBookingDialog
+                                            booking={booking}
+                                        />
+                                    )}
+                                </div>
+                            </ManagementSection>
+                        )}
                     </aside>
                 </div>
             </div>
         </>
+    );
+}
+
+function DeletePartyBookingDialog({
+    booking,
+}: {
+    booking: ManagedPartyBooking;
+}) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    className="w-full justify-start"
+                >
+                    <Trash2Icon aria-hidden="true" className="size-4" />
+                    Eliminar festa
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        Eliminar definitivamente {booking.reference}?
+                    </DialogTitle>
+                    <DialogDescription>
+                        Esta ação remove o pedido e os seus dados. Não será
+                        possível recuperá-lo.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">
+                            Cancelar
+                        </Button>
+                    </DialogClose>
+                    <Form {...destroyBooking.form(booking.id)}>
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={processing}
+                            >
+                                {processing
+                                    ? 'A eliminar...'
+                                    : 'Eliminar definitivamente'}
+                            </Button>
+                        )}
+                    </Form>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

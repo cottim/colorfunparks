@@ -13,13 +13,14 @@ class GetPartyBookings
     /**
      * @return array<string, mixed>
      */
-    public function handle(): array
+    public function handle(bool $onlyArchived = false): array
     {
         return PartyBooking::query()
             ->select([
                 'id',
                 'user_id',
                 'status',
+                'archived_at',
                 'park',
                 'child_name',
                 'child_age',
@@ -33,6 +34,11 @@ class GetPartyBookings
                 'contact_phone',
                 'created_at',
             ])
+            ->when(
+                $onlyArchived,
+                fn ($query) => $query->whereNotNull('archived_at'),
+                fn ($query) => $query->whereNull('archived_at'),
+            )
             ->with('user:id,name,email')
             ->latest('id')
             ->paginate(20)
