@@ -1,10 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import {
-    ArrowDownIcon,
-    ArrowUpIcon,
-    PlusIcon,
-    Trash2Icon,
-} from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import type { ChangeEvent, FormEvent } from 'react';
 import AlertError from '@/components/alert-error';
 import InputError from '@/components/input-error';

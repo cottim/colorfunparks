@@ -5,12 +5,19 @@ use App\Models\PartyBooking;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('party references begin at CFP1001', function () {
+test('new party references are not sequential', function () {
     $booking = PartyBooking::factory()->create();
 
     expect($booking->id)->toBe(1)
         ->and($booking->partyNumber())->toBe(1001)
-        ->and($booking->reference())->toBe('CFP1001');
+        ->and($booking->reference())->toMatch('/^CFP-[A-Z0-9]{10}$/');
+});
+
+test('legacy party references remain available', function () {
+    $booking = PartyBooking::factory()->create();
+    $booking->forceFill(['reference_code' => null])->saveQuietly();
+
+    expect($booking->reference())->toBe('CFP1001');
 });
 
 test('guests are redirected to login from the management page', function () {

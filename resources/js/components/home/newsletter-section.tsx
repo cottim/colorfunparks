@@ -12,9 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import {
     getNewsletterStorageSnapshot,
+    getNewsletterSessionEmail,
     parseNewsletterSubmission,
     removeNewsletterSubmission,
     saveNewsletterSubmission,
+    saveNewsletterSessionEmail,
     subscribeToNewsletterStorage,
 } from '@/lib/newsletter-submission-storage';
 import type { SavedNewsletterSubmission } from '@/lib/newsletter-submission-storage';
@@ -64,6 +66,9 @@ export function NewsletterSection({
     const activeSubmission = isAuthenticated
         ? authenticatedSubmission
         : savedSubmission;
+    const canResend =
+        activeSubmission?.status === 'pending' &&
+        getNewsletterSessionEmail() !== '';
 
     useEffect(() => {
         if (
@@ -76,7 +81,6 @@ export function NewsletterSection({
 
             saveNewsletterSubmission({
                 status: 'confirmed',
-                email: currentSubmission?.email ?? '',
                 maskedEmail: currentSubmission?.maskedEmail ?? '',
                 expirationMinutes: currentSubmission?.expirationMinutes,
             });
@@ -95,7 +99,13 @@ export function NewsletterSection({
     }
 
     function sendSubscription() {
-        const email = activeSubmission?.email || data.email;
+        const email = getNewsletterSessionEmail() || data.email;
+
+        if (email === '') {
+            correctEmail();
+
+            return;
+        }
 
         transform((formData) => ({
             ...formData,
@@ -108,10 +118,10 @@ export function NewsletterSection({
             onSuccess: (response) => {
                 const submission: SavedNewsletterSubmission = {
                     status: 'pending',
-                    email,
                     maskedEmail: response.masked_email,
                     expirationMinutes: response.expiration_minutes,
                 };
+                saveNewsletterSessionEmail(email);
 
                 if (isAuthenticated) {
                     setAuthenticatedSubmission(submission);
@@ -289,15 +299,17 @@ export function NewsletterSection({
 
                                     {activeSubmission.status === 'pending' && (
                                         <div className="flex flex-col gap-3 sm:flex-row">
-                                            <Button
-                                                type="button"
-                                                disabled={processing}
-                                                onClick={sendSubscription}
-                                                className="bg-[#558b6e] text-white hover:bg-[#47775d]"
-                                            >
-                                                {processing && <Spinner />}
-                                                Reenviar email
-                                            </Button>
+                                            {canResend && (
+                                                <Button
+                                                    type="button"
+                                                    disabled={processing}
+                                                    onClick={sendSubscription}
+                                                    className="bg-[#558b6e] text-white hover:bg-[#47775d]"
+                                                >
+                                                    {processing && <Spinner />}
+                                                    Reenviar email
+                                                </Button>
+                                            )}
                                             <Button
                                                 type="button"
                                                 variant="outline"

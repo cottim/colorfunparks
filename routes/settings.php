@@ -15,7 +15,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(RequirePassword::class)
         ->name('profile.email.edit');
     Route::post('settings/profile/email', [EmailChangeController::class, 'store'])
-        ->middleware([RequirePassword::class, 'throttle:6,1'])
+        ->middleware([
+            RequirePassword::class,
+            'throttle:email-change-requests',
+        ])
         ->name('profile.email.store');
     Route::delete('settings/profile/email', [EmailChangeController::class, 'destroy'])
         ->middleware('throttle:6,1')

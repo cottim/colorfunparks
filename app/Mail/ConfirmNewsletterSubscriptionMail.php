@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\URL;
 
@@ -17,6 +18,8 @@ class ConfirmNewsletterSubscriptionMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public readonly string $confirmationUrl;
+
+    public readonly string $unsubscribeUrl;
 
     public readonly int $expirationMinutes;
 
@@ -35,8 +38,10 @@ class ConfirmNewsletterSubscriptionMail extends Mailable implements ShouldQueue
                 'token' => $plainTextToken,
             ],
         );
-
-        $this->afterCommit();
+        $this->unsubscribeUrl = URL::signedRoute(
+            'newsletter-subscriptions.unsubscribe',
+            ['newsletterSubscription' => $subscription],
+        );
     }
 
     /**
@@ -56,6 +61,19 @@ class ConfirmNewsletterSubscriptionMail extends Mailable implements ShouldQueue
     {
         return new Content(
             markdown: 'mail.newsletter.confirm-subscription',
+        );
+    }
+
+    /**
+     * Get the message headers.
+     */
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'List-Unsubscribe' => '<'.$this->unsubscribeUrl.'>',
+                'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+            ],
         );
     }
 

@@ -23,6 +23,10 @@ class StoreColorCampRegistrationRequest extends FormRequest
     public function rules(): array
     {
         $isAuthenticatedCustomer = $this->user()?->role === UserRole::Customer;
+        $hasHealthData = $this
+            ->string('allergies_and_health_notes')
+            ->trim()
+            ->isNotEmpty();
         /** @var list<array{value: string, available: bool}> $weeks */
         $weeks = config('color_camp.weeks');
         /** @var list<array{value: string}> $days */
@@ -59,6 +63,12 @@ class StoreColorCampRegistrationRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:5000',
+            ],
+            'health_data_consent' => [
+                Rule::requiredIf($hasHealthData),
+                Rule::when($hasHealthData, ['accepted']),
+                'nullable',
+                'boolean',
             ],
             'authorized_pickup_name' => [
                 'required',
@@ -248,6 +258,8 @@ class StoreColorCampRegistrationRequest extends FormRequest
             'lunch_option.in' => 'Escolhe uma opção de almoço válida.',
             'discount.in' => 'Escolhe uma opção de desconto válida.',
             'photo_consent.in' => 'Escolhe uma opção de autorização de imagem.',
+            'health_data_consent.required' => 'É necessário autorizar especificamente o tratamento das informações de saúde indicadas.',
+            'health_data_consent.accepted' => 'É necessário autorizar especificamente o tratamento das informações de saúde indicadas.',
             'privacy_accepted.accepted' => 'É necessário aceitar a Política de Privacidade.',
             'terms_accepted.accepted' => 'É necessário aceitar os Termos e Condições.',
             'website.max' => 'Não foi possível enviar a inscrição.',

@@ -27,6 +27,8 @@ class ColorCampRegistrationFactory extends Factory
                 '2022-08-03',
             ),
             'allergies_and_health_notes' => null,
+            'health_data_consented_at' => null,
+            'health_data_consent_version' => null,
             'authorized_pickup_name' => fake()->name(),
             'authorized_pickup_phone' => fake()->phoneNumber(),
             'attendance_type' => 'weeks',

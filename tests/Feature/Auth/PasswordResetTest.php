@@ -76,3 +76,33 @@ test('password cannot be reset with invalid token', function () {
 
     $response->assertSessionHasErrors('email');
 });
+
+test('password reset link requests are rate limited by IP', function () {
+    config([
+        'fortify.password_reset_rate_limits.links_per_minute_per_ip' => 2,
+    ]);
+
+    $this->post(route('password.email'), ['email' => 'first@example.com']);
+    $this->post(route('password.email'), ['email' => 'second@example.com']);
+
+    $this->post(route('password.email'), ['email' => 'third@example.com'])
+        ->assertTooManyRequests();
+});
+
+test('password reset attempts are rate limited by IP', function () {
+    config([
+        'fortify.password_reset_rate_limits.attempts_per_minute_per_ip' => 2,
+    ]);
+    $payload = [
+        'token' => 'invalid-token',
+        'email' => 'user@example.com',
+        'password' => 'newpassword123',
+        'password_confirmation' => 'newpassword123',
+    ];
+
+    $this->post(route('password.update'), $payload);
+    $this->post(route('password.update'), $payload);
+
+    $this->post(route('password.update'), $payload)
+        ->assertTooManyRequests();
+});

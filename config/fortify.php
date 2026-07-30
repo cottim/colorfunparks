@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ThrottlePasswordResetRequests;
 use Laravel\Fortify\Features;
 
 return [
@@ -101,7 +102,10 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => [
+        'web',
+        ThrottlePasswordResetRequests::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -118,6 +122,13 @@ return [
         'login' => 'login',
         'two-factor' => 'two-factor',
         'passkeys' => 'passkeys',
+    ],
+
+    'password_reset_rate_limits' => [
+        'links_per_minute_per_ip' => 3,
+        'links_per_hour_per_email' => 5,
+        'attempts_per_minute_per_ip' => 5,
+        'attempts_per_hour_per_token' => 10,
     ],
 
     /*

@@ -51,6 +51,14 @@ class CreateColorCampRegistration
             'allergies_and_health_notes' => $data[
                 'allergies_and_health_notes'
             ],
+            'health_data_consented_at' => $data[
+                'allergies_and_health_notes'
+            ] !== null ? now() : null,
+            'health_data_consent_version' => $data[
+                'allergies_and_health_notes'
+            ] !== null
+                ? ColorCampRegistration::HEALTH_DATA_CONSENT_VERSION
+                : null,
             'authorized_pickup_name' => $data['authorized_pickup_name'],
             'authorized_pickup_phone' => $data[
                 'authorized_pickup_phone'

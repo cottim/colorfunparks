@@ -4,6 +4,7 @@ use App\Actions\Customer\ClaimCustomerColorCampRegistrations;
 use App\ColorCampRegistrationStatus;
 use App\Models\ColorCampRegistration;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -36,6 +37,13 @@ test('the Color Camp registration form is public', function () {
                 )
                 ->has('registrationOptions.days', 20),
         );
+});
+
+test('new Color Camp references are not sequential', function () {
+    $registration = ColorCampRegistration::factory()->create();
+
+    expect($registration->reference())
+        ->toMatch('/^CFC-[A-Z0-9]{10}$/');
 });
 
 test('authenticated customers are identified by the server in the form', function () {
@@ -83,6 +91,10 @@ test('guests can submit a Color Camp registration', function () {
         ->toBe('Sem alergias conhecidas.')
         ->and($registration->getRawOriginal('allergies_and_health_notes'))
         ->not->toContain('Sem alergias conhecidas.')
+        ->and($registration->health_data_consented_at)
+        ->not->toBeNull()
+        ->and($registration->health_data_consent_version)
+        ->toBe(ColorCampRegistration::HEALTH_DATA_CONSENT_VERSION)
         ->and($registration->status)
         ->toBe(ColorCampRegistrationStatus::Pending);
 });
@@ -135,6 +147,36 @@ test('Color Camp rules are validated again by the server', function () {
     ]);
 
     expect(ColorCampRegistration::query()->count())->toBe(0);
+});
+
+test('health information requires specific explicit consent', function () {
+    $this->post(
+        route('color-camp-registrations.store'),
+        validColorCampRegistrationPayload([
+            'health_data_consent' => false,
+        ]),
+    )->assertSessionHasErrors('health_data_consent');
+
+    expect(ColorCampRegistration::query()->count())->toBe(0);
+});
+
+test('health consent is not required when no health data is supplied', function () {
+    $this->post(
+        route('color-camp-registrations.store'),
+        validColorCampRegistrationPayload([
+            'allergies_and_health_notes' => '',
+            'health_data_consent' => false,
+        ]),
+    )->assertRedirect();
+
+    $registration = ColorCampRegistration::query()->sole();
+
+    expect($registration->allergies_and_health_notes)
+        ->toBeNull()
+        ->and($registration->health_data_consented_at)
+        ->toBeNull()
+        ->and($registration->health_data_consent_version)
+        ->toBeNull();
 });
 
 test('verified customers can claim earlier Color Camp registrations', function () {
@@ -258,6 +300,106 @@ test('staff can manage Color Camp registrations', function () {
         ->toBe(ColorCampRegistrationStatus::Confirmed);
 });
 
+test('management Color Camp lists do not serialize sensitive participant data', function () {
+    $staff = User::factory()->staff()->create();
+    $registration = ColorCampRegistration::factory()->create([
+        'allergies_and_health_notes' => 'Alergia grave a amendoins.',
+        'authorized_pickup_name' => 'Pessoa autorizada',
+        'authorized_pickup_phone' => '910000000',
+        'notes' => 'Observação privada.',
+    ]);
+
+    $this->actingAs($staff)
+        ->get(route('management.color-camp-registrations.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->has(
+                    'registrations.data.0',
+                    fn (Assert $registrationData) => $registrationData
+                        ->where('id', $registration->id)
+                        ->missing('allergiesAndHealthNotes')
+                        ->missing('authorizedPickupName')
+                        ->missing('authorizedPickupPhone')
+                        ->missing('childBirthDate')
+                        ->missing('notes')
+                        ->etc(),
+                ),
+        );
+});
+
+test('customer Color Camp lists keep sensitive data on the detail view', function () {
+    $customer = User::factory()->create();
+    $registration = ColorCampRegistration::factory()
+        ->recycle($customer)
+        ->create([
+            'allergies_and_health_notes' => 'Alergia grave a amendoins.',
+            'authorized_pickup_name' => 'Pessoa autorizada',
+            'authorized_pickup_phone' => '910000000',
+            'notes' => 'Observação privada.',
+        ]);
+
+    $this->actingAs($customer)
+        ->get(route('account.color-camp-registrations.index'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->has(
+                    'registrations.data.0',
+                    fn (Assert $registrationData) => $registrationData
+                        ->where('id', $registration->id)
+                        ->missing('allergiesAndHealthNotes')
+                        ->missing('authorizedPickupName')
+                        ->missing('authorizedPickupPhone')
+                        ->missing('childBirthDate')
+                        ->missing('notes')
+                        ->etc(),
+                ),
+        );
+});
+
+test('staff access to sensitive Color Camp details is audited', function () {
+    $staff = User::factory()->staff()->create();
+    $registration = ColorCampRegistration::factory()->create([
+        'allergies_and_health_notes' => 'Alergia grave a amendoins.',
+        'notes' => 'Observação privada.',
+    ]);
+    Log::spy();
+
+    $this->actingAs($staff)
+        ->get(
+            route(
+                'management.color-camp-registrations.show',
+                $registration,
+            ),
+        )
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where(
+                    'registration.allergiesAndHealthNotes',
+                    'Alergia grave a amendoins.',
+                )
+                ->where(
+                    'registration.notes',
+                    'Observação privada.',
+                ),
+        );
+
+    Log::shouldHaveReceived('notice')
+        ->once()
+        ->with(
+            'Sensitive Color Camp registration data accessed.',
+            Mockery::on(
+                fn (array $context): bool => $context === [
+                    'event' => 'color_camp_registration.sensitive_data_accessed',
+                    'actor_user_id' => $staff->id,
+                    'color_camp_registration_id' => $registration->id,
+                ],
+            ),
+        );
+});
+
 /**
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
@@ -271,6 +413,7 @@ function validColorCampRegistrationPayload(array $overrides = []): array
         'child_name' => 'Leonor',
         'child_birth_date' => '2018-08-10',
         'allergies_and_health_notes' => 'Sem alergias conhecidas.',
+        'health_data_consent' => true,
         'authorized_pickup_name' => 'Maria Cliente',
         'authorized_pickup_phone' => '912345678',
         'attendance_type' => 'weeks',

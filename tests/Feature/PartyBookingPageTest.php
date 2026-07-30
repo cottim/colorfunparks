@@ -219,23 +219,65 @@ test('the party booking receipt gives the customer a secure account access link'
 
     expect($loginRequest->hasValidSignature(false))
         ->toBeTrue()
-        ->and(
-            CustomerLoginLink::query()
-                ->where(
-                    'token_hash',
-                    hash('sha256', $plainTextToken),
-                )
-                ->value('email'),
-        )
-        ->toBe('maria@example.com');
+        ->and($loginLink = CustomerLoginLink::query()
+            ->where(
+                'token_hash',
+                hash('sha256', $plainTextToken),
+            )
+            ->firstOrFail())
+        ->email->toBe('maria@example.com')
+        ->and($loginLink->privacy_accepted_at)->toBeNull()
+        ->and($loginLink->terms_accepted_at)->toBeNull()
+        ->and($loginLink->legal_consent_version)->toBeNull();
 
     $this->get($receipt->loginUrl)
         ->assertRedirect(route('account.index'));
 
     $booking = PartyBooking::query()->sole();
+    $customer = User::query()->sole();
 
     expect($booking->refresh()->user_id)
-        ->toBe(User::query()->sole()->id);
+        ->toBe($customer->id)
+        ->and($customer->hasAcceptedCurrentLegalConsent())
+        ->toBeFalse()
+        ->and($customer->privacy_accepted_at)
+        ->toBeNull()
+        ->and($customer->terms_accepted_at)
+        ->toBeNull()
+        ->and($customer->legal_consent_version)
+        ->toBeNull();
+});
+
+test('party booking receipts are rate limited per normalized target email', function () {
+    Mail::fake();
+    config()->set('party_bookings.rate_limits.per_hour_per_email', 2);
+
+    foreach ([
+        ['ip' => '192.0.2.10', 'email' => 'VICTIM@EXAMPLE.COM'],
+        ['ip' => '192.0.2.11', 'email' => ' victim@example.com '],
+    ] as $attempt) {
+        $this->withServerVariables(['REMOTE_ADDR' => $attempt['ip']])
+            ->post(
+                route('party-bookings.store'),
+                validPartyBookingPayload([
+                    'email' => $attempt['email'],
+                ]),
+            )
+            ->assertRedirect(route('party-bookings.received'));
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.12'])
+        ->post(
+            route('party-bookings.store'),
+            validPartyBookingPayload([
+                'email' => 'victim@example.com',
+            ]),
+        )
+        ->assertTooManyRequests();
+
+    expect(PartyBooking::query()->count())->toBe(2);
+
+    Mail::assertQueued(PartyBookingReceivedMail::class, 2);
 });
 
 test('the party booking receipt summarizes the request without child details', function () {

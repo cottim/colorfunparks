@@ -75,6 +75,103 @@ test('an expired pending change cannot reserve an email address forever', functi
         ->toBe('available@example.com');
 });
 
+test('a pending change does not reserve an email address for another user', function () {
+    Mail::fake();
+    PendingEmailChange::factory()->create([
+        'email' => 'shared@example.com',
+    ]);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), [
+            'email' => 'shared@example.com',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    expect(
+        PendingEmailChange::query()
+            ->where('email', 'shared@example.com')
+            ->count(),
+    )->toBe(2);
+});
+
+test('repeated email changes to the same address respect the resend cooldown', function () {
+    Mail::fake();
+    $user = User::factory()->create();
+    $payload = ['email' => 'new@example.com'];
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), $payload)
+        ->assertSessionHasNoErrors();
+
+    $originalTokenHash = $user->pendingEmailChange
+        ?->token_hash;
+
+    $this->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), $payload)
+        ->assertSessionHasNoErrors();
+
+    expect($user->pendingEmailChange()->sole()->token_hash)
+        ->toBe($originalTokenHash);
+    Mail::assertQueued(ConfirmEmailChangeMail::class, 1);
+});
+
+test('a new email change confirmation can be sent after the cooldown', function () {
+    Mail::fake();
+    $user = User::factory()->create();
+    $payload = ['email' => 'new@example.com'];
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), $payload);
+
+    $originalTokenHash = $user->pendingEmailChange
+        ?->token_hash;
+
+    $this->travel(
+        (int) config('email_changes.resend_cooldown_minutes') + 1,
+    )->minutes();
+
+    $this->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), $payload)
+        ->assertSessionHasNoErrors();
+
+    expect($user->pendingEmailChange()->sole()->token_hash)
+        ->not->toBe($originalTokenHash);
+    Mail::assertQueued(ConfirmEmailChangeMail::class, 2);
+});
+
+test('email change requests are rate limited by target address', function () {
+    Mail::fake();
+    $targetEmail = 'target@example.com';
+    $allowedAttempts = (int) config(
+        'email_changes.rate_limits.per_hour_per_email',
+    );
+
+    foreach (range(1, $allowedAttempts) as $attempt) {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => time()])
+            ->post(route('profile.email.store'), [
+                'email' => $targetEmail,
+            ])
+            ->assertRedirect(route('profile.edit'));
+    }
+
+    $blockedUser = User::factory()->create();
+
+    $this->actingAs($blockedUser)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('profile.email.store'), [
+            'email' => $targetEmail,
+        ])
+        ->assertTooManyRequests();
+});
+
 test('the new address is only applied after its confirmation link is used', function () {
     Mail::fake();
     $user = User::factory()->create([

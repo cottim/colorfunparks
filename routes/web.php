@@ -18,109 +18,91 @@ use App\Http\Controllers\Management\DashboardController as ManagementDashboardCo
 use App\Http\Controllers\Management\InternalUserController;
 use App\Http\Controllers\Management\PartyBookingController as ManagementPartyBookingController;
 use App\Http\Controllers\NewsletterSubscriptionController;
+use App\Http\Controllers\NewsletterUnsubscribeController;
 use App\Http\Controllers\PartyBookingController;
 use App\Http\Controllers\RequestCustomerLoginLinkController;
 use App\Http\Controllers\StaffInvitationController;
 use App\Http\Controllers\SubscribeCustomerMarketingController;
+use App\Http\Controllers\UnsubscribeCustomerMarketingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
-Route::get('/novidades', [ArticleController::class, 'index'])
+Route::get('novidades', [ArticleController::class, 'index'])
     ->name('articles.index');
-Route::get('/novidades/{article:slug}', [
+Route::get('novidades/{article:slug}', [
     ArticleController::class,
     'show',
 ])->name('articles.show');
 
 Route::middleware('guest')->group(function () {
-    Route::redirect('/register', '/login')->name('register');
-    Route::inertia('/admin-backend', 'auth/admin-login')
+    Route::redirect('register', '/login')->name('register');
+    Route::inertia('admin-backend', 'auth/admin-login')
         ->name('admin.login');
-    Route::post('/login/link', RequestCustomerLoginLinkController::class)
+    Route::post('login/link', RequestCustomerLoginLinkController::class)
         ->middleware('throttle:customer-login-links')
         ->name('customer-login.request');
-    Route::get(
-        '/login/confirmar/{token}',
-        AuthenticateCustomerController::class,
-    )
+    Route::get('login/confirmar/{token}', AuthenticateCustomerController::class)
         ->middleware(['signed:relative', 'throttle:10,1'])
         ->name('customer-login.authenticate');
-    Route::get(
-        '/convites/equipa/{token}',
-        [StaffInvitationController::class, 'show'],
-    )
+    Route::get('convites/equipa/{token}', [StaffInvitationController::class, 'show'])
         ->middleware('throttle:staff-invitations')
         ->name('staff-invitations.show');
-    Route::post(
-        '/convites/equipa/{token}',
-        [StaffInvitationController::class, 'store'],
-    )
+    Route::post('convites/equipa/{token}', [StaffInvitationController::class, 'store'])
         ->middleware('throttle:staff-invitations')
         ->name('staff-invitations.store');
 });
 
-Route::post('/newsletter', NewsletterSubscriptionController::class)
+Route::post('newsletter', NewsletterSubscriptionController::class)
     ->middleware('throttle:newsletter-subscriptions')
     ->name('newsletter-subscriptions.store');
-Route::get(
-    '/newsletter/confirmar/{newsletterSubscription}/{token}',
-    ConfirmNewsletterSubscriptionController::class,
-)
+Route::get('newsletter/confirmar/{newsletterSubscription}/{token}', ConfirmNewsletterSubscriptionController::class)
     ->middleware(['signed', 'throttle:10,1'])
     ->name('newsletter-subscriptions.confirm');
-
-Route::get('/marcar-festa', [PartyBookingController::class, 'create'])
-    ->name('party-bookings.create');
-Route::post('/marcar-festa', [PartyBookingController::class, 'store'])
-    ->middleware('throttle:5,1')
-    ->name('party-bookings.store');
-Route::post(
-    '/marcar-festa/trocar-conta',
-    ExitPartyBookingCustomerSessionController::class,
+Route::match(
+    ['get', 'post'],
+    'newsletter/cancelar/{newsletterSubscription}',
+    NewsletterUnsubscribeController::class,
 )
+    ->middleware(['signed', 'throttle:10,1'])
+    ->name('newsletter-subscriptions.unsubscribe');
+
+Route::get('marcar-festa', [PartyBookingController::class, 'create'])
+    ->name('party-bookings.create');
+Route::post('marcar-festa', [PartyBookingController::class, 'store'])
+    ->middleware('throttle:party-booking-submissions')
+    ->name('party-bookings.store');
+Route::post('marcar-festa/trocar-conta', ExitPartyBookingCustomerSessionController::class)
     ->middleware(['auth', 'can:access-customer-account'])
     ->name('party-bookings.customer-session.destroy');
-Route::inertia('/marcar-festa/recebido', 'party-bookings/received')
+Route::inertia('marcar-festa/recebido', 'party-bookings/received')
     ->name('party-bookings.received');
 
-Route::get(
-    '/color-camp/inscricao',
-    [ColorCampRegistrationController::class, 'create'],
-)->name('color-camp-registrations.create');
-Route::post(
-    '/color-camp/inscricao',
-    [ColorCampRegistrationController::class, 'store'],
-)
+Route::get('color-camp/inscricao', [ColorCampRegistrationController::class, 'create'])->name('color-camp-registrations.create');
+Route::post('color-camp/inscricao', [ColorCampRegistrationController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('color-camp-registrations.store');
-Route::inertia(
-    '/color-camp/inscricao/recebida',
-    'color-camp-registrations/received',
-)->name('color-camp-registrations.received');
+Route::inertia('color-camp/inscricao/recebida', 'color-camp-registrations/received')->name('color-camp-registrations.received');
 
-Route::inertia('/politica-de-privacidade', 'legal/privacy-policy')
+Route::inertia('politica-de-privacidade', 'legal/privacy-policy')
     ->name('legal.privacy-policy');
-Route::inertia('/termos-e-condicoes', 'legal/terms-and-conditions')
+Route::inertia('termos-e-condicoes', 'legal/terms-and-conditions')
     ->name('legal.terms-and-conditions');
-Route::inertia('/politica-de-cookies', 'legal/cookie-policy')
+Route::inertia('politica-de-cookies', 'legal/cookie-policy')
     ->name('legal.cookie-policy');
 
 Route::prefix('servicos')
     ->name('services.')
     ->group(function () {
-        Route::inertia('/brincar-a-hora', 'services/hourly-play')
+        Route::inertia('brincar-a-hora', 'services/hourly-play')
             ->name('hourly-play');
-        Route::inertia(
-            '/cartao-da-brincadeira',
-            'services/play-card',
-        )->name('play-card');
-        Route::inertia('/color-camp', 'services/color-camp')
+        Route::inertia('cartao-da-brincadeira', 'services/play-card')->name('play-card');
+        Route::inertia('color-camp', 'services/color-camp')
             ->name('color-camp');
     });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::redirect('/dashboard', '/gestao')
+    Route::redirect('dashboard', '/gestao')
         ->middleware('can:access-management')
         ->name('dashboard');
 
@@ -130,37 +112,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::get('/', ManagementDashboardController::class)
                 ->name('index');
-            Route::get('/festas', [ManagementPartyBookingController::class, 'index'])
+            Route::get('festas', [ManagementPartyBookingController::class, 'index'])
                 ->name('bookings.index');
-            Route::get(
-                '/festas/{partyBooking}',
-                [ManagementPartyBookingController::class, 'show'],
-            )->name('bookings.show');
-            Route::patch(
-                '/festas/{partyBooking}/arquivo',
-                [ManagementPartyBookingController::class, 'archive'],
-            )->name('bookings.archive');
-            Route::delete(
-                '/festas/{partyBooking}/arquivo',
-                [ManagementPartyBookingController::class, 'unarchive'],
-            )->name('bookings.unarchive');
-            Route::delete(
-                '/festas/{partyBooking}',
-                [ManagementPartyBookingController::class, 'destroy'],
-            )->name('bookings.destroy');
-            Route::get(
-                '/color-camp',
-                [ManagementColorCampRegistrationController::class, 'index'],
-            )->name('color-camp-registrations.index');
-            Route::get(
-                '/color-camp/{colorCampRegistration}',
-                [ManagementColorCampRegistrationController::class, 'show'],
-            )->name('color-camp-registrations.show');
-            Route::patch(
-                '/color-camp/{colorCampRegistration}',
-                [ManagementColorCampRegistrationController::class, 'update'],
-            )->name('color-camp-registrations.update');
-            Route::get('/clientes', ManagementCustomerController::class)
+            Route::get('festas/{partyBooking}', [ManagementPartyBookingController::class, 'show'])->name('bookings.show');
+            Route::patch('festas/{partyBooking}/arquivo', [ManagementPartyBookingController::class, 'archive'])->name('bookings.archive');
+            Route::delete('festas/{partyBooking}/arquivo', [ManagementPartyBookingController::class, 'unarchive'])->name('bookings.unarchive');
+            Route::delete('festas/{partyBooking}', [ManagementPartyBookingController::class, 'destroy'])->name('bookings.destroy');
+            Route::get('color-camp', [ManagementColorCampRegistrationController::class, 'index'])->name('color-camp-registrations.index');
+            Route::get('color-camp/{colorCampRegistration}', [ManagementColorCampRegistrationController::class, 'show'])->name('color-camp-registrations.show');
+            Route::patch('color-camp/{colorCampRegistration}', [ManagementColorCampRegistrationController::class, 'update'])->name('color-camp-registrations.update');
+            Route::get('clientes', ManagementCustomerController::class)
                 ->name('customers.index');
             Route::resource('conteudos', ManagementArticleController::class)
                 ->except(['show'])
@@ -173,10 +134,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'update' => 'articles.update',
                     'destroy' => 'articles.destroy',
                 ]);
-            Route::get('/utilizadores', [InternalUserController::class, 'index'])
+            Route::get('utilizadores', [InternalUserController::class, 'index'])
                 ->middleware('can:manage-internal-users')
                 ->name('users.index');
-            Route::post('/utilizadores', [InternalUserController::class, 'store'])
+            Route::post('utilizadores', [InternalUserController::class, 'store'])
                 ->middleware([
                     'can:manage-internal-users',
                     'throttle:staff-invitations',
@@ -209,28 +170,22 @@ Route::middleware(['auth', 'can:access-customer-account'])
                 'index' => 'color-camp-registrations.index',
                 'show' => 'color-camp-registrations.show',
             ]);
-        Route::get('/perfil', [CustomerProfileController::class, 'edit'])
+        Route::get('perfil', [CustomerProfileController::class, 'edit'])
             ->name('profile.edit');
-        Route::patch('/perfil', [CustomerProfileController::class, 'update'])
+        Route::patch('perfil', [CustomerProfileController::class, 'update'])
             ->name('profile.update');
-        Route::get(
-            '/preferencias',
-            [CustomerPreferenceController::class, 'edit'],
-        )
+        Route::get('preferencias', [CustomerPreferenceController::class, 'edit'])
             ->name('preferences.edit');
-        Route::post(
-            '/preferencias/consentimentos',
-            [
-                CustomerPreferenceController::class,
-                'acceptLegalConsent',
-            ],
-        )->name('preferences.legal-consent.store');
-        Route::post(
-            '/preferencias/marketing',
-            SubscribeCustomerMarketingController::class,
-        )
+        Route::post('preferencias/consentimentos', [
+            CustomerPreferenceController::class,
+            'acceptLegalConsent',
+        ])->name('preferences.legal-consent.store');
+        Route::post('preferencias/marketing', SubscribeCustomerMarketingController::class)
             ->middleware('throttle:3,1')
             ->name('preferences.marketing.store');
+        Route::delete('preferencias/marketing', UnsubscribeCustomerMarketingController::class)
+            ->middleware('throttle:3,1')
+            ->name('preferences.marketing.destroy');
     });
 
 require __DIR__.'/settings.php';

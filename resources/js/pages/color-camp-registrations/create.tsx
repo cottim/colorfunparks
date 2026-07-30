@@ -43,6 +43,7 @@ type RegistrationForm = {
     child_name: string;
     child_birth_date: string;
     allergies_and_health_notes: string;
+    health_data_consent: boolean;
     authorized_pickup_name: string;
     authorized_pickup_phone: string;
     attendance_type: 'weeks' | 'days';
@@ -73,6 +74,7 @@ export default function CreateColorCampRegistration({
         child_name: '',
         child_birth_date: '',
         allergies_and_health_notes: '',
+        health_data_consent: false,
         authorized_pickup_name: authenticatedCustomer?.name ?? '',
         authorized_pickup_phone: '',
         attendance_type: 'weeks',
@@ -226,20 +228,55 @@ export default function CreateColorCampRegistration({
                                 error={form.errors.child_birth_date}
                                 required
                             />
-                            <TextAreaField
-                                id="allergies_and_health_notes"
-                                label="Alergias ou informações de saúde relevantes"
-                                description="Partilha apenas o que a equipa precisa de saber para cuidar da criança em segurança."
-                                value={form.data.allergies_and_health_notes}
-                                onChange={(value) =>
-                                    form.setData(
-                                        'allergies_and_health_notes',
-                                        value,
-                                    )
-                                }
-                                error={form.errors.allergies_and_health_notes}
-                                className="sm:col-span-2"
-                            />
+                            <div className="space-y-3 sm:col-span-2">
+                                <TextAreaField
+                                    id="allergies_and_health_notes"
+                                    label="Alergias ou informações de saúde relevantes"
+                                    description="Partilha apenas o que a equipa precisa de saber para cuidar da criança em segurança."
+                                    value={form.data.allergies_and_health_notes}
+                                    onChange={(value) => {
+                                        form.setData(
+                                            'allergies_and_health_notes',
+                                            value,
+                                        );
+
+                                        if (value.trim() === '') {
+                                            form.setData(
+                                                'health_data_consent',
+                                                false,
+                                            );
+                                        }
+                                    }}
+                                    error={
+                                        form.errors.allergies_and_health_notes
+                                    }
+                                />
+                                {form.data.allergies_and_health_notes.trim() !==
+                                    '' && (
+                                    <div className="rounded-xl border border-[#558b6e]/25 bg-[#558b6e]/8 p-4">
+                                        <ConsentField
+                                            checked={
+                                                form.data.health_data_consent
+                                            }
+                                            onChange={(checked) =>
+                                                form.setData(
+                                                    'health_data_consent',
+                                                    checked,
+                                                )
+                                            }
+                                            error={
+                                                form.errors.health_data_consent
+                                            }
+                                        >
+                                            Autorizo explicitamente o tratamento
+                                            das informações de saúde indicadas
+                                            acima, exclusivamente para garantir
+                                            a segurança e os cuidados da criança
+                                            durante o Color Camp.
+                                        </ConsentField>
+                                    </div>
+                                )}
+                            </div>
                         </FormSection>
 
                         <FormSection

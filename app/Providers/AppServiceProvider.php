@@ -8,6 +8,7 @@ use App\UserRole;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -72,6 +73,63 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for(
+            'email-change-requests',
+            function (Request $request): array {
+                $email = Str::lower(
+                    trim((string) $request->input('email')),
+                );
+
+                return [
+                    Limit::perMinute(
+                        (int) config(
+                            'email_changes.rate_limits.per_minute_per_user',
+                        ),
+                    )->by('user:'.$request->user()?->getAuthIdentifier()),
+                    Limit::perHour(
+                        (int) config(
+                            'email_changes.rate_limits.per_hour_per_email',
+                        ),
+                    )->by('email:'.hash('sha256', $email)),
+                ];
+            },
+        );
+
+        RateLimiter::for(
+            'party-booking-submissions',
+            function (Request $request): array {
+                $customer = $request->user();
+                $email = $customer instanceof User
+                    && $customer->role === UserRole::Customer
+                    ? $customer->email
+                    : Str::lower(
+                        trim((string) $request->input('email')),
+                    );
+                $limits = [
+                    Limit::perMinute(
+                        (int) config(
+                            'party_bookings.rate_limits.per_minute_per_ip',
+                        ),
+                    )->by('minute:'.$request->ip()),
+                    Limit::perHour(
+                        (int) config(
+                            'party_bookings.rate_limits.per_hour_per_ip',
+                        ),
+                    )->by('hour-ip:'.$request->ip()),
+                ];
+
+                if ($email !== '') {
+                    $limits[] = Limit::perHour(
+                        (int) config(
+                            'party_bookings.rate_limits.per_hour_per_email',
+                        ),
+                    )->by('hour-email:'.hash('sha256', $email));
+                }
+
+                return $limits;
+            },
+        );
+
+        RateLimiter::for(
             'customer-login-links',
             function (Request $request): array {
                 $email = Str::lower(
@@ -106,6 +164,28 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
+    /**
+     * Configure default behaviors for production-ready applications.
+     */
+    protected function configureDefaults(): void
+    {
+        Date::use(CarbonImmutable::class);
+
+        DB::prohibitDestructiveCommands(
+            app()->isProduction(),
+        );
+
+        Password::defaults(fn (): ?Password => app()->isProduction()
+            ? Password::min(12)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+                ->symbols()
+                ->uncompromised()
+            : null,
+        );
+    }
+
     private function configureInertiaErrorPages(): void
     {
         Inertia::handleExceptionsUsing(
@@ -137,34 +217,16 @@ class AppServiceProvider extends ServiceProvider
                     ->render('errors/not-found', [
                         'canAccessManagement' => $user instanceof User
                             && $user->canAccessManagement(),
-                        'latestArticles' => app(
-                            GetLatestArticlePreviews::class,
-                        )->handle(3),
+                        'latestArticles' => Cache::remember(
+                            'errors.latest-article-previews',
+                            now()->addMinutes(10),
+                            fn (): array => app(
+                                GetLatestArticlePreviews::class,
+                            )->handle(3),
+                        ),
                     ])
                     ->withSharedData();
             },
-        );
-    }
-
-    /**
-     * Configure default behaviors for production-ready applications.
-     */
-    protected function configureDefaults(): void
-    {
-        Date::use(CarbonImmutable::class);
-
-        DB::prohibitDestructiveCommands(
-            app()->isProduction(),
-        );
-
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
         );
     }
 }

@@ -7,7 +7,7 @@ Recebemos um pedido para receber novidades, campanhas e atividades da Color Fun 
 Confirmar inscrição
 </x-mail::button>
 
-Se não fizeste este pedido, podes ignorar este email. O link expira dentro de {{ $expirationMinutes }} minutos.
+Se não fizeste este pedido, podes [cancelar este pedido]({{ $unsubscribeUrl }}). O link de confirmação expira dentro de {{ $expirationMinutes }} minutos.
 
 Até breve,<br>
 {{ config('app.name') }}

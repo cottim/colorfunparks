@@ -36,31 +36,35 @@ export type PaginatedCustomerBookings = {
 export type CustomerColorCampRegistrationStatus =
     'pending' | 'reviewing' | 'confirmed' | 'waitlisted' | 'cancelled';
 
-export type CustomerColorCampRegistration = {
+export type CustomerColorCampRegistrationSummary = {
     id: number;
     reference: string;
     status: CustomerColorCampRegistrationStatus;
     statusLabel: string;
     childName: string;
-    childBirthDate: string;
     attendanceType: string;
     attendanceLabel: string;
     selectedPeriods: string[];
-    lunchOption: string;
-    discount: string | null;
-    needsExtendedCare: boolean;
-    tripAuthorized: boolean;
-    photoConsent: string;
-    allergiesAndHealthNotes: string | null;
-    authorizedPickupName: string;
-    authorizedPickupPhone: string;
-    contactPhone: string;
-    notes: string | null;
     createdAt: string;
 };
 
+export type CustomerColorCampRegistration =
+    CustomerColorCampRegistrationSummary & {
+        childBirthDate: string;
+        lunchOption: string;
+        discount: string | null;
+        needsExtendedCare: boolean;
+        tripAuthorized: boolean;
+        photoConsent: string;
+        allergiesAndHealthNotes: string | null;
+        authorizedPickupName: string;
+        authorizedPickupPhone: string;
+        contactPhone: string;
+        notes: string | null;
+    };
+
 export type PaginatedCustomerColorCampRegistrations = {
-    data: CustomerColorCampRegistration[];
+    data: CustomerColorCampRegistrationSummary[];
     links: {
         url: string | null;
         label: string;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ColorCamp\PresentColorCampRegistrationSummary;
 use App\Actions\Customer\PresentCustomerColorCampRegistration;
 use App\Models\ColorCampRegistration;
 use Illuminate\Http\Request;
@@ -13,13 +14,24 @@ class CustomerColorCampRegistrationController extends Controller
 {
     public function index(
         Request $request,
-        PresentCustomerColorCampRegistration $presentRegistration,
+        PresentColorCampRegistrationSummary $presentRegistration,
     ): Response {
         $user = $request->user();
 
         abort_if($user === null, 401);
 
         $registrations = $user->colorCampRegistrations()
+            ->select([
+                'id',
+                'reference_code',
+                'user_id',
+                'status',
+                'child_name',
+                'attendance_type',
+                'selected_weeks',
+                'selected_days',
+                'created_at',
+            ])
             ->latest()
             ->paginate(10)
             ->through($presentRegistration->handle(...));

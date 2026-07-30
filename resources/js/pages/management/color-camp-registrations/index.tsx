@@ -11,14 +11,14 @@ import {
     show as registrationShow,
 } from '@/routes/management/color-camp-registrations';
 import type {
-    ManagedColorCampRegistration,
+    ManagedColorCampRegistrationSummary,
     Pagination,
 } from '@/types/management';
 
 export default function ManagementColorCampRegistrations({
     registrations,
 }: {
-    registrations: Pagination<ManagedColorCampRegistration>;
+    registrations: Pagination<ManagedColorCampRegistrationSummary>;
 }) {
     return (
         <>

@@ -13,8 +13,12 @@ import CustomerAccountLayout from '@/layouts/customer-account-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const cspNonce = document.querySelector<HTMLMetaElement>(
+    'meta[name="csp-nonce"]',
+)?.content;
 
 createInertiaApp({
+    nonce: cspNonce,
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {

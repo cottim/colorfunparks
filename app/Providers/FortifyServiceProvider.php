@@ -114,5 +114,47 @@ class FortifyServiceProvider extends ServiceProvider
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),
             );
         });
+
+        RateLimiter::for(
+            'password-reset-links',
+            function (Request $request): array {
+                $email = Str::lower(
+                    trim((string) $request->input('email')),
+                );
+
+                return [
+                    Limit::perMinute(
+                        (int) config(
+                            'fortify.password_reset_rate_limits.links_per_minute_per_ip',
+                        ),
+                    )->by('minute-ip:'.$request->ip()),
+                    Limit::perHour(
+                        (int) config(
+                            'fortify.password_reset_rate_limits.links_per_hour_per_email',
+                        ),
+                    )->by('hour-email:'.hash('sha256', $email)),
+                ];
+            },
+        );
+
+        RateLimiter::for(
+            'password-reset-attempts',
+            function (Request $request): array {
+                $token = trim((string) $request->input('token'));
+
+                return [
+                    Limit::perMinute(
+                        (int) config(
+                            'fortify.password_reset_rate_limits.attempts_per_minute_per_ip',
+                        ),
+                    )->by('minute-ip:'.$request->ip()),
+                    Limit::perHour(
+                        (int) config(
+                            'fortify.password_reset_rate_limits.attempts_per_hour_per_token',
+                        ),
+                    )->by('hour-token:'.hash('sha256', $token)),
+                ];
+            },
+        );
     }
 }

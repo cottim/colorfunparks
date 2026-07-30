@@ -1,12 +1,16 @@
 export type SavedNewsletterSubmission = {
     status: 'pending' | 'confirmed';
-    email: string;
     maskedEmail: string;
     expirationMinutes?: number;
 };
 
-const newsletterStorageKey = 'color-fun-parks.newsletter-submission.v2';
-const legacyNewsletterStorageKey = 'color-fun-parks.newsletter-submission.v1';
+const newsletterStorageKey = 'color-fun-parks.newsletter-submission.v3';
+const legacyNewsletterStorageKeys = [
+    'color-fun-parks.newsletter-submission.v1',
+    'color-fun-parks.newsletter-submission.v2',
+];
+const newsletterSessionEmailKey =
+    'color-fun-parks.newsletter-submission-email.v1';
 const newsletterStorageEvent = 'newsletter-submission-changed';
 
 export function subscribeToNewsletterStorage(callback: () => void) {
@@ -41,12 +45,27 @@ export function saveNewsletterSubmission(
 
 export function removeNewsletterSubmission() {
     window.localStorage.removeItem(newsletterStorageKey);
-    window.localStorage.removeItem(legacyNewsletterStorageKey);
+    removeLegacyNewsletterSubmission();
+    window.sessionStorage.removeItem(newsletterSessionEmailKey);
     notifyNewsletterStorageChanged();
 }
 
 export function removeLegacyNewsletterSubmission() {
-    window.localStorage.removeItem(legacyNewsletterStorageKey);
+    legacyNewsletterStorageKeys.forEach((key) =>
+        window.localStorage.removeItem(key),
+    );
+}
+
+export function saveNewsletterSessionEmail(email: string) {
+    window.sessionStorage.setItem(newsletterSessionEmailKey, email);
+}
+
+export function getNewsletterSessionEmail(): string {
+    if (typeof window === 'undefined') {
+        return '';
+    }
+
+    return window.sessionStorage.getItem(newsletterSessionEmailKey) ?? '';
 }
 
 export function parseNewsletterSubmission(
@@ -65,15 +84,20 @@ export function parseNewsletterSubmission(
             !('status' in submission) ||
             (submission.status !== 'pending' &&
                 submission.status !== 'confirmed') ||
-            !('email' in submission) ||
-            typeof submission.email !== 'string' ||
             !('maskedEmail' in submission) ||
             typeof submission.maskedEmail !== 'string'
         ) {
             return null;
         }
 
-        return submission as SavedNewsletterSubmission;
+        return {
+            status: submission.status,
+            maskedEmail: submission.maskedEmail,
+            ...('expirationMinutes' in submission &&
+            typeof submission.expirationMinutes === 'number'
+                ? { expirationMinutes: submission.expirationMinutes }
+                : {}),
+        };
     } catch {
         return null;
     }

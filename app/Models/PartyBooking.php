@@ -5,16 +5,20 @@ namespace App\Models;
 use App\PartyBookingStatus;
 use Database\Factories\PartyBookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
  * @property int|null $user_id
  * @property PartyBookingStatus $status
  * @property Carbon|null $archived_at
+ * @property string|null $reference_code
  * @property string $park
  * @property string $child_name
  * @property int $child_age
@@ -53,11 +57,20 @@ use Illuminate\Support\Carbon;
 class PartyBooking extends Model
 {
     /** @use HasFactory<PartyBookingFactory> */
-    use HasFactory;
+    use HasFactory, MassPrunable;
 
     protected $attributes = [
         'status' => PartyBookingStatus::Pending->value,
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (PartyBooking $booking): void {
+            $booking->reference_code ??= 'CFP-'.Str::upper(
+                Str::random(10),
+            );
+        });
+    }
 
     public function partyNumber(): int
     {
@@ -66,7 +79,21 @@ class PartyBooking extends Model
 
     public function reference(): string
     {
-        return 'CFP'.$this->partyNumber();
+        return $this->reference_code ?? 'CFP'.$this->partyNumber();
+    }
+
+    /**
+     * @return Builder<PartyBooking>
+     */
+    public function prunable(): Builder
+    {
+        return self::query()->whereDate(
+            'party_date',
+            '<=',
+            today()->subDays(
+                (int) config('privacy.retention_days.party_bookings'),
+            ),
+        );
     }
 
     /**

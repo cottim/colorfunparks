@@ -13,7 +13,10 @@ import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { store as acceptLegalConsent } from '@/routes/account/preferences/legal-consent';
-import { store as subscribeToMarketing } from '@/routes/account/preferences/marketing';
+import {
+    destroy as unsubscribeFromMarketing,
+    store as subscribeToMarketing,
+} from '@/routes/account/preferences/marketing';
 import { privacyPolicy, termsAndConditions } from '@/routes/legal';
 import { playCard } from '@/routes/services';
 
@@ -104,20 +107,41 @@ export default function CustomerPreferences({
                         </div>
 
                         {marketing.isAuthorized ? (
-                            <div className="mt-6 flex gap-3 rounded-2xl bg-emerald-50 p-4 text-emerald-900">
-                                <CheckCircle2Icon
-                                    className="mt-0.5 size-5 shrink-0"
-                                    aria-hidden="true"
-                                />
-                                <div>
-                                    <h3 className="font-bold">
-                                        Estás a receber as nossas novidades
-                                    </h3>
-                                    <p className="mt-1 text-sm leading-6 text-emerald-800">
-                                        O teu email foi confirmado para
-                                        comunicações de marketing.
-                                    </p>
+                            <div className="mt-6 flex flex-1 flex-col">
+                                <div className="flex gap-3 rounded-2xl bg-emerald-50 p-4 text-emerald-900">
+                                    <CheckCircle2Icon
+                                        className="mt-0.5 size-5 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <div>
+                                        <h3 className="font-bold">
+                                            Estás a receber as nossas novidades
+                                        </h3>
+                                        <p className="mt-1 text-sm leading-6 text-emerald-800">
+                                            O teu email foi confirmado para
+                                            comunicações de marketing.
+                                        </p>
+                                    </div>
                                 </div>
+
+                                <Form
+                                    {...unsubscribeFromMarketing.form()}
+                                    options={{ preserveScroll: true }}
+                                    className="mt-auto pt-6"
+                                >
+                                    {({ processing }) => (
+                                        <Button
+                                            type="submit"
+                                            variant="outline"
+                                            disabled={processing}
+                                            className="rounded-xl"
+                                        >
+                                            {processing
+                                                ? 'A guardar…'
+                                                : 'Deixar de receber'}
+                                        </Button>
+                                    )}
+                                </Form>
                             </div>
                         ) : (
                             <div className="mt-6 flex flex-1 flex-col">

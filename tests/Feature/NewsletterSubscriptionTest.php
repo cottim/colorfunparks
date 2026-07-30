@@ -133,6 +133,97 @@ test('a visitor can confirm the newsletter subscription using the emailed link',
         ->toBeNull();
 });
 
+test('a subscriber can unsubscribe using the signed email link', function () {
+    $subscription = NewsletterSubscription::factory()->create();
+    $unsubscribeUrl = URL::signedRoute(
+        'newsletter-subscriptions.unsubscribe',
+        ['newsletterSubscription' => $subscription],
+    );
+
+    $this->get($unsubscribeUrl)
+        ->assertRedirect(
+            route('home', ['newsletter' => 'unsubscribed']).'#newsletter',
+        );
+
+    expect($subscription->refresh()->status)
+        ->toBe(NewsletterSubscriptionStatus::Unsubscribed)
+        ->and($subscription->unsubscribed_at)
+        ->not->toBeNull();
+});
+
+test('email providers can unsubscribe a subscriber with one click', function () {
+    $subscription = NewsletterSubscription::factory()->create();
+    $unsubscribeUrl = URL::signedRoute(
+        'newsletter-subscriptions.unsubscribe',
+        ['newsletterSubscription' => $subscription],
+    );
+
+    $this->post($unsubscribeUrl, [
+        'List-Unsubscribe' => 'One-Click',
+    ])->assertNoContent();
+
+    expect($subscription->refresh()->status)
+        ->toBe(NewsletterSubscriptionStatus::Unsubscribed);
+});
+
+test('newsletter unsubscribe links require a valid signature', function () {
+    $subscription = NewsletterSubscription::factory()->create();
+
+    $this->get(route('newsletter-subscriptions.unsubscribe', [
+        'newsletterSubscription' => $subscription,
+    ]))->assertNotFound();
+
+    expect($subscription->refresh()->status)
+        ->toBe(NewsletterSubscriptionStatus::Confirmed);
+});
+
+test('newsletter emails include a visible and one-click unsubscribe option', function () {
+    $subscription = NewsletterSubscription::factory()->pending()->create();
+    $mail = new ConfirmNewsletterSubscriptionMail(
+        $subscription,
+        'confirmation-token',
+    );
+
+    expect($mail->unsubscribeUrl)
+        ->toContain(
+            route('newsletter-subscriptions.unsubscribe', [
+                'newsletterSubscription' => $subscription,
+            ]),
+        )
+        ->and($mail->headers()->text)
+        ->toMatchArray([
+            'List-Unsubscribe' => '<'.$mail->unsubscribeUrl.'>',
+            'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+        ]);
+
+    $mail->assertSeeInHtml('cancelar este pedido');
+    $mail->assertSeeInText('cancelar este pedido');
+});
+
+test('authenticated customers can stop marketing emails from preferences', function () {
+    $customer = User::factory()->create();
+    $subscription = NewsletterSubscription::factory()->create([
+        'email' => $customer->email,
+    ]);
+
+    $this->actingAs($customer)
+        ->delete(route('account.preferences.marketing.destroy'))
+        ->assertRedirect(route('account.preferences.edit'));
+
+    expect($subscription->refresh()->status)
+        ->toBe(NewsletterSubscriptionStatus::Unsubscribed)
+        ->and($subscription->unsubscribed_at)
+        ->not->toBeNull();
+
+    $this->get(route('account.preferences.edit'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('preferences.marketing.status', 'not-authorized')
+                ->where('preferences.marketing.isAuthorized', false),
+        );
+});
+
 test('newsletter confirmation requires a valid single-use token', function () {
     $subscription = NewsletterSubscription::factory()->pending()->create();
     $url = URL::temporarySignedRoute(

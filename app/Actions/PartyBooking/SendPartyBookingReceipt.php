@@ -21,7 +21,6 @@ class SendPartyBookingReceipt
 
         $loginUrl = $this->issueCustomerLoginLink->handle(
             $partyBooking->contact_email,
-            recordsLegalConsent: true,
         );
 
         Mail::to($partyBooking->contact_email)->send(

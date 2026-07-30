@@ -104,3 +104,17 @@ export type ManagedColorCampRegistration = {
     };
     statusOptions: Status[];
 };
+
+export type ManagedColorCampRegistrationSummary = Pick<
+    ManagedColorCampRegistration,
+    | 'id'
+    | 'reference'
+    | 'status'
+    | 'statusLabel'
+    | 'childName'
+    | 'attendanceType'
+    | 'attendanceLabel'
+    | 'selectedPeriods'
+    | 'createdAt'
+    | 'customer'
+>;

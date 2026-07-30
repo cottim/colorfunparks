@@ -35,6 +35,7 @@ class GetDashboard
         $recentBookings = PartyBooking::query()
             ->select([
                 'id',
+                'reference_code',
                 'user_id',
                 'status',
                 'child_name',

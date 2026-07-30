@@ -17,6 +17,12 @@ for (
 return [
     'max_months_ahead' => 3,
 
+    'rate_limits' => [
+        'per_minute_per_ip' => 5,
+        'per_hour_per_ip' => 20,
+        'per_hour_per_email' => 3,
+    ],
+
     'parks' => [
         ['value' => 'color-party', 'label' => 'Color Party'],
         ['value' => 'yupi-color', 'label' => 'Yupi Color'],

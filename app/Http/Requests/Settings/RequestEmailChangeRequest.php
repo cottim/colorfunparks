@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Settings;
 
-use App\Models\PendingEmailChange;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,9 +26,6 @@ class RequestEmailChangeRequest extends FormRequest
     public function rules(): array
     {
         $user = $this->user();
-        $pendingEmailChangeId = $user
-            ?->pendingEmailChange()
-            ->value('id');
 
         return [
             'email' => [
@@ -39,15 +35,6 @@ class RequestEmailChangeRequest extends FormRequest
                 'max:255',
                 Rule::notIn([$user?->email]),
                 Rule::unique(User::class),
-                Rule::unique(PendingEmailChange::class, 'email')
-                    ->where(
-                        fn ($query) => $query->where(
-                            'expires_at',
-                            '>',
-                            now(),
-                        ),
-                    )
-                    ->ignore($pendingEmailChangeId),
             ],
         ];
     }

@@ -18,6 +18,7 @@ class GetPartyBookings
         return PartyBooking::query()
             ->select([
                 'id',
+                'reference_code',
                 'user_id',
                 'status',
                 'archived_at',

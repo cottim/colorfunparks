@@ -7,7 +7,7 @@ import {
 } from '@/routes/account/color-camp-registrations';
 import { create as createRegistration } from '@/routes/color-camp-registrations';
 import type {
-    CustomerColorCampRegistration,
+    CustomerColorCampRegistrationSummary,
     PaginatedCustomerColorCampRegistrations,
 } from '@/types/customer-account';
 
@@ -93,7 +93,7 @@ export default function CustomerColorCampRegistrations({
 function RegistrationCard({
     registration,
 }: {
-    registration: CustomerColorCampRegistration;
+    registration: CustomerColorCampRegistrationSummary;
 }) {
     return (
         <Link
@@ -130,7 +130,7 @@ export function StatusPill({
     status,
     label,
 }: {
-    status: CustomerColorCampRegistration['status'];
+    status: CustomerColorCampRegistrationSummary['status'];
     label: string;
 }) {
     return (
